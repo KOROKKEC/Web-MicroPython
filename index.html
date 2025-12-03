@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Web MicroPython</title>
+    
+    <!-- Core libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- ESP Web Tools: used for ESP series firmware flashing (requires HTTPS / localhost) -->
+    <script
+      type="module"
+      src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module">
+    </script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        md: {
+                            base: '#101418',
+                            surface: '#1a1c1e',
+                            surface2: '#202429',
+                            primary: '#a8c7fa',
+                            onPrimary: '#003355',
+                            secondary: '#4fd8eb',
+                            danger: '#ffb4ab',
+                            success: '#b6f2ba',
+                            warning: '#efb8c8'
+                        }
+                    },
+                    borderRadius: { '3xl': '1.5rem', '4xl': '2rem' }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #101418; color: #e2e2e6; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #444746; border-radius: 99px; }
+        
+        /* Material-style helpers (only effective if Tailwind is built locally; with CDN they are decorative) */
+        .btn-material { @apply flex items-center justify-center gap-2 px-4 py-2 rounded-full transition-all duration-200 font-medium select-none cursor-pointer active:scale-95; }
+        .btn-icon { @apply p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer text-gray-400 hover:text-white; }
+        .btn-filled { @apply bg-md-primary text-md-onPrimary hover:opacity-90 shadow-lg shadow-blue-900/20; }
+        .btn-tonal { @apply bg-[#334455] text-md-primary hover:bg-[#3f5060]; }
+        .btn-text { @apply text-gray-400 hover:text-white hover:bg-white/5; }
+        
+        .file-item { @apply px-4 py-3 rounded-r-full mr-2 cursor-pointer flex items-center gap-3 text-sm text-gray-400 transition-colors border-l-4 border-transparent hover:bg-white/5; }
+        .file-item.active { @apply bg-[#004a77] text-blue-200 border-md-primary; }
+
+        /* Modal animation */
+        .modal-bg { @apply fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm opacity-0 transition-opacity duration-300; }
+        .modal-bg.show { @apply opacity-100; }
+        .modal-content { @apply bg-md-surface2 w-full max-w-2xl rounded-3xl p-6 shadow-2xl transform scale-95 transition-transform duration-300 border border-gray-700; }
+        .modal-bg.show .modal-content { @apply scale-100; }
+
+        /* Sidebar animation */
+        .sidebar-mobile { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-hidden { transform: translateX(-100%); }
+
+        /* Floating modal positioning */
+        .esp-flasher-modal {
+            position: fixed;
+            top: 20px; /* Distance from top of the screen */
+            left: 50%;
+            transform: translateX(-50%); /* Center the modal horizontally */
+            z-index: 60; /* Make sure it's above the editor and terminal */
+            width: 95%;
+            max-width: 500px;
+            background-color: #1a1c1e;
+            border-radius: 1.5rem;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        .esp-flasher-modal.show {
+            display: block;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden relative selection:bg-md-primary selection:text-md-onPrimary">
+
+    <!-- Global loading overlay (hidden by default) -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm hidden">
+        <div class="bg-md-surface p-6 rounded-3xl shadow-2xl flex flex-col items-center gap-4 border border-gray-800">
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-md-primary"></i>
+            <span id="loading-text" class="text-sm tracking-wider">Processing...</span>
+        </div>
+    </div>
+
+    <!-- Top bar -->
+    <header class="h-16 flex items-center justify-between px-4 bg-md-base shrink-0 z-20 border-b border-gray-800">
+        <div class="flex items-center gap-3">
+            <button class="md:hidden btn-icon" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+            <div class="flex flex-col">
+                <h1 class="text-lg font-bold text-md-primary tracking-tight">
+                    Web MicroPython
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center bg-md-surface2 rounded-full p-1 border border-gray-700">
+            <button id="btnConnect"
+                    class="bg-md-primary text-md-onPrimary text-xs font-bold px-4 py-1.5 rounded-full hover:brightness-110 transition-all"
+                    onclick="toggleConnection()">Connect</button>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <div class="flex-1 flex overflow-hidden relative">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="absolute inset-y-0 left-0 w-64 bg-md-surface2 z-10 flex flex-col border-r border-gray-800 sidebar-mobile sidebar-hidden md:relative md:transform-none shadow-2xl md:shadow-none">
+            <div class="p-3 flex items-center justify-between border-b border-gray-800">
+                <span class="text-xs font-bold text-gray-500 uppercase pl-2">Explorer</span>
+                <div class="flex gap-1">
+                    <button class="btn-icon w-7 h-7" onclick="refreshFileList()"><i class="fa-solid fa-rotate-right text-xs"></i></button>
+                    <button class="btn-icon w-7 h-7" onclick="createNewFile()"><i class="fa-solid fa-plus text-xs"></i></button>
+                    <button class="btn-icon w-7 h-7" onclick="deleteCurrentFile()"><i class="fa-solid fa-trash text-xs"></i></button>
+                </div>
+            </div>
+            <div id="fileList" class="flex-1 overflow-y-auto pb-4 pt-2">
+                <div class="flex flex-col items-center justify-center h-40 text-gray-600 gap-2 opacity-50">
+                    <i class="fa-regular fa-folder-open text-2xl"></i>
+                    <span class="text-xs">Please connect device</span>
+                </div>
+            </div>
+        </aside>
+        
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-0 hidden md:hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
+
+        <!-- Content -->
+        <main class="flex-1 flex flex-col bg-md-base min-w-0">
+            <!-- Toolbar -->
+            <div class="h-12 flex items-center px-2 gap-2 border-b border-gray-800 bg-md-base shrink-0 overflow-x-auto no-scrollbar">
+                <div id="fileTab" class="hidden px-4 py-1.5 bg-md-surface rounded-full text-sm text-md-primary font-medium flex items-center gap-2 border border-gray-700">
+                    <i id="fileTabIcon" class="fa-solid fa-file-code"></i>
+                    <span id="fileTabName">main.py</span>
+                    <button onclick="closeFile()" class="ml-2 hover:text-white text-gray-500"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="flex-1"></div>
+
+                <!-- Run/Save/Stop group -->
+                <div class="flex items-center gap-1 bg-md-surface2 rounded-full p-1 border border-gray-700">
+                    <button id="btnRun"
+                            class="btn-icon w-8 h-8 text-green-400 hover:bg-green-900/30 btn-disabled"
+                            onclick="runScript()" title="Run (F5)">
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+                    <button id="btnSave"
+                            class="btn-icon w-8 h-8 text-blue-400 hover:bg-blue-900/30 btn-disabled"
+                            onclick="saveFile()" title="Save (Ctrl+S)">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                    </button>
+                    <button id="btnStop"
+                            class="btn-icon w-8 h-8 text-red-400 hover:bg-red-900/30 btn-disabled"
+                            onclick="stopCode()" title="Stop">
+                        <i class="fa-solid fa-stop"></i>
+                    </button>
+                </div>
+
+                <!-- Toolbox button: yellow lightning, open ESP flashing window -->
+                <button class="btn-icon w-8 h-8 text-yellow-300 hover:bg-yellow-900/30 ml-1"
+                        onclick="openEspFlashModal()"
+                        title="ESP series firmware flasher">
+                    <i class="fa-solid fa-bolt"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 flex flex-col lg:flex-row overflow-hidden p-2 gap-2">
+                <!-- Editor -->
+                <div class="flex-1 bg-md-surface rounded-3xl overflow-hidden shadow-lg border border-gray-800 relative flex flex-col">
+                    <div id="editor" class="flex-1"></div>
+                    <div id="editor-placeholder" class="absolute inset-0 flex items-center justify-center bg-md-surface z-10 text-gray-600 flex-col gap-3">
+                        <i class="fa-brands fa-python text-6xl opacity-20"></i>
+                    </div>
+                </div>
+
+                <!-- Terminal -->
+                <div class="h-1/3 lg:h-auto lg:w-[40%] bg-black rounded-3xl overflow-hidden border border-gray-800 p-1 shadow-lg flex flex-col">
+                    <div class="h-8 flex items-center justify-between px-4 bg-black border-b border-gray-900">
+                        <span class="text-[10px] font-bold text-gray-500 uppercase">Shell</span>
+                        <div class="flex gap-2 items-center">
+                            <span class="text-[10px] text-gray-600">Type below</span>
+                            <div class="w-2 h-2 rounded-full bg-red-500" id="termStatusDot"></div>
+                        </div>
+                    </div>
+                    <div id="terminal-container" class="flex-1 bg-black pl-1"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ESP series firmware flashing tool window (hidden by default) -->
+    <div id="espFlashModal" class="esp-flasher-modal">
+        <div class="modal-content max-w-xl">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-md-primary">ESP Series Firmware Flasher</h2>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Flash MicroPython firmware to ESP8266 / ESP32 series boards directly from your browser.
+                    </p>
+                </div>
+                <button class="btn-icon" onclick="toggleModal('espFlashModal', false)">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-sm">
+                <div class="bg-md-surface rounded-2xl px-3 py-2 border border-gray-700 text-[11px] text-gray-400 leading-relaxed">
+                    <p>Instructions:</p>
+                    <ol class="list-decimal list-inside mt-1 space-y-1">
+                        <li>Use Chrome / Edge and open this page via <code>https://</code> or <code>http://localhost</code>.</li>
+                        <li>If REPL is currently connected, please disconnect it first.</li>
+                        <li>Click the button below, select the ESP device serial port.</li>
+                        <li>Follow the prompts to select/confirm firmware and start flashing.</li>
+                    </ol>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs text-gray-400">Firmware manifest URL</label>
+                    <input
+                        id="espManifestInput"
+                        class="w-full bg-md-surface border border-gray-700 rounded-2xl px-3 py-2 text-xs focus:outline-none focus:border-md-primary"
+                        placeholder="e.g. https://your-domain.com/micropython/esp-manifest.json"
+                        value="https://your-domain.com/micropython/esp-manifest.json">
+                    <p class="text-[10px] text-gray-500">
+                        Tip: The manifest can define different firmware images for different chip types
+                        (ESP8266, ESP32, ESP32-S3, ESP32-C3, etc.). ESP Web Tools will auto-detect the chip
+                        and flash the correct firmware.
+                    </p>
+                </div>
+
+                <div class="pt-2">
+                    <!-- ESP Web Tools install button; outer button keeps our visual style -->
+                    <esp-web-install-button id="espInstaller"
+                        manifest="https://your-domain.com/micropython/esp-manifest.json">
+                        <!-- Custom slot content -->
+                        <button class="btn-material btn-filled text-xs px-5 py-2">
+                            <i class="fa-solid fa-bolt text-xs"></i>
+                            <span>Connect and Flash Firmware</span>
+                        </button>
+                    </esp-web-install-button>
+                    <p class="text-[10px] text-gray-500 mt-2">
+                        If you need to change the manifest URL, edit the field above and click "Apply manifest".
+                    </p>
+                    <div class="mt-2 flex gap-2">
+                        <button class="btn-material btn-tonal text-[11px] px-3 py-1.5"
+                                onclick="applyEspManifest()">
+                            <i class="fa-solid fa-link text-[10px]"></i>
+                            <span>Apply manifest</span>
+                        </button>
+                        <button class="btn-material btn-text text-[11px] px-3 py-1.5"
+                                onclick="window.open('https://esphome.github.io/esp-web-tools/', '_blank')">
+                            <i class="fa-solid fa-circle-question text-[10px]"></i>
+                            <span>ESP Web Tools docs</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-700 pt-3 mt-1">
+                    <p class="text-[10px] text-gray-500">
+                        Suggestion: host your MicroPython firmware images (single .bin or merged image) on an HTTPS server,
+                        and create an <code>esp-manifest.json</code> following ESP Web Tools' format. Then you can flash
+                        all ESP series devices from this page with one click.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================= Global state =================
+        let currentFilename = null;
+        let isConnected = false;
+        let currentAdapter = null;
+
+        // UI helpers
+        function showLoading(show, txt) {
+            const el = document.getElementById('loading-overlay');
+            if (show) {
+                el.classList.remove('hidden');
+                document.getElementById('loading-text').innerText = txt || "Processing...";
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+
+        function toggleModal(id, show) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (show) {
+                el.classList.remove('hidden');
+                setTimeout(() => el.classList.add('show'), 10);
+            } else {
+                el.classList.remove('show');
+                setTimeout(() => el.classList.add('hidden'), 300);
+            }
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebar-overlay');
+            sb.classList.toggle('sidebar-hidden');
+            if (sb.classList.contains('sidebar-hidden')) ov.classList.add('hidden');
+            else ov.classList.remove('hidden');
+        }
+
+        // ================= Editor & Terminal =================
+        const editor = ace.edit("editor");
+        editor.setTheme("ace/theme/tomorrow_night_eighties");
+        editor.session.setMode("ace/mode/python");
+        editor.setFontSize(14);
+        editor.setReadOnly(true);
+
+        const term = new Terminal({
+            cursorBlink: true,
+            theme: { background: '#000000', foreground: '#d4d4d4' },
+            fontFamily: 'Consolas, monospace',
+            fontSize: 13
+        });
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        term.open(document.getElementById('terminal-container'));
+        new ResizeObserver(() => fitAddon.fit()).observe(document.getElementById('terminal-container'));
+
+        // ================= Serial Adapter (MicroPython over Web Serial) =================
+        class SerialAdapter {
+            constructor() {
+                this.port = null;
+                this.reader = null;
+                this.writer = null;
+                this.keepReading = false;
+                this.internalBuffer = "";
+                this.isInternal = false;
+            }
+            
+            async connect() {
+                if (!navigator.serial) throw new Error("Current browser does not support Web Serial");
+                this.port = await navigator.serial.requestPort();
+                await this.port.open({ baudRate: 115200 });
+                await this.port.setSignals({ dataTerminalReady: false, requestToSend: false }); // avoid auto reset
+                const enc = new TextEncoderStream();
+                const dec = new TextDecoderStream();
+                enc.readable.pipeTo(this.port.writable);
+                this.port.readable.pipeTo(dec.writable);
+                this.writer = enc.writable.getWriter();
+                this.reader = dec.readable.getReader();
+                this.keepReading = true;
+                this.readLoop();
+                
+                // Initialize: interrupt and go to REPL
+                await this.write('\x03\x03'); // Ctrl-C twice
+                await delay(100);
+            }
+            
+            async disconnect() {
+                this.keepReading = false;
+                try { await this.reader.cancel(); } catch(e){}
+                try { await this.writer.close(); } catch(e){}
+                try { await this.port.close(); } catch(e){}
+            }
+            
+            async readLoop() {
+                while (this.port?.readable && this.keepReading) {
+                    try {
+                        const { value, done } = await this.reader.read();
+                        if (done) break;
+                        if (value) this.isInternal ? (this.internalBuffer += value) : term.write(value);
+                    } catch (e) { break; }
+                }
+            }
+            
+            async write(d) {
+                if (this.writer) await this.writer.write(d);
+            }
+            
+            async execInternal(code) {
+                this.isInternal = true;
+                this.internalBuffer = "";
+                try {
+                    await this.write('\x03\x01'); // Raw REPL
+                    await delay(50);
+                    this.internalBuffer = "";
+                    await this.write(code + '\x04'); // Execute
+                    // Wait for result terminator
+                    for (let i = 0; i < 150; i++) {
+                        if (this.internalBuffer.includes('\x04>')) break;
+                        await delay(50);
+                    }
+                    await this.write('\x02'); // Exit raw REPL
+                } catch (e) {
+                } finally {
+                    this.isInternal = false;
+                }
+                
+                const raw = this.internalBuffer;
+                const okIdx = raw.indexOf('OK');
+                if (okIdx !== -1) {
+                    const parts = raw.substring(okIdx + 2).split('\x04');
+                    if (parts[1]) console.error("Exec Error:", parts[1]);
+                    return parts[0];
+                }
+                return null;
+            }
+
+            async listFiles() {
+                const res = await this.execInternal("import os; print(os.listdir())");
+                return res ? JSON.parse(res.trim().replace(/'/g, '"')) : [];
+            }
+            async readFile(fn) {
+                const code = `import ubinascii\ntry:\n with open('${fn}','rb') as f: print(ubinascii.b2a_base64(f.read()).decode('utf-8'),end='')\nexcept: print('')`;
+                const b64 = await this.execInternal(code);
+                return b64 ? decodeURIComponent(escape(window.atob(b64.trim()))) : "";
+            }
+            async saveFile(fn, txt) {
+                const b64 = btoa(unescape(encodeURIComponent(txt)));
+                await this.execInternal(`import ubinascii\nwith open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`);
+            }
+            async deleteFile(fn) {
+                await this.execInternal(`import os; os.remove('${fn}')`);
+            }
+        }
+
+        // ================= Logic Control =================
+
+        async function toggleConnection() {
+            if (isConnected) {
+                if (currentAdapter) await currentAdapter.disconnect();
+                isConnected = false;
+                resetUI();
+            } else {
+                currentAdapter = new SerialAdapter();
+                try {
+                    showLoading(true, "Connecting...");
+                    await currentAdapter.connect();
+                    isConnected = true;
+                    updateUIConnected();
+                    setTimeout(() => refreshFileList(), 500); 
+                } catch (e) {
+                    alert(e.message || e);
+                    isConnected = false;
+                    resetUI();
+                } finally {
+                    showLoading(false);
+                }
+            }
+        }
+
+        // File operations
+        async function refreshFileList() {
+            if (!currentAdapter) return;
+            showLoading(true, "Syncing files...");
+            try {
+                const files = await currentAdapter.listFiles();
+                const list = document.getElementById('fileList');
+                list.innerHTML = "";
+                files.forEach(f => {
+                    const div = document.createElement('div');
+                    div.className = `file-item ${f === currentFilename ? 'active' : ''}`;
+                    div.innerHTML = `<i class="fa-brands fa-python"></i> ${f}`;
+                    div.onclick = () => openFile(f);
+                    list.appendChild(div);
+                });
+            } catch (e) {
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function openFile(fn) {
+            currentFilename = fn;
+            showLoading(true, "Reading file...");
+            const txt = await currentAdapter.readFile(fn);
+            editor.setValue(txt, -1);
+            editor.setReadOnly(false);
+            document.getElementById('editor-placeholder').classList.add('hidden');
+            updateTab();
+            refreshFileList();
+            showLoading(false);
+        }
+
+        async function saveFile() {
+            if (!currentFilename || !currentAdapter) return;
+            showLoading(true, "Saving file...");
+            await currentAdapter.saveFile(currentFilename, editor.getValue());
+            showLoading(false);
+        }
+
+        async function createNewFile() {
+            if (!currentAdapter) {
+                alert("Please connect to device first");
+                return;
+            }
+            const n = prompt("New file name:");
+            if (n) {
+                currentFilename = n;
+                editor.setValue("", -1);
+                await saveFile();
+                openFile(n);
+            }
+        }
+        
+        async function deleteCurrentFile() {
+            if (currentFilename && currentAdapter && confirm("Delete this file?")) {
+                await currentAdapter.deleteFile(currentFilename);
+                closeFile();
+                refreshFileList();
+            }
+        }
+
+        function closeFile() {
+            currentFilename = null;
+            editor.setValue("", -1);
+            editor.setReadOnly(true);
+            document.getElementById('editor-placeholder').classList.remove('hidden');
+            updateTab();
+        }
+
+        function updateTab() {
+            const tab = document.getElementById('fileTab');
+            const btns = ['btnRun','btnSave','btnStop'];
+            if (currentFilename) {
+                tab.classList.remove('hidden');
+                document.getElementById('fileTabName').innerText = currentFilename;
+                btns.forEach(id => document.getElementById(id).classList.remove('btn-disabled'));
+            } else {
+                tab.classList.add('hidden');
+                btns.forEach(id => document.getElementById(id).classList.add('btn-disabled'));
+            }
+        }
+
+        // Run & stop
+        async function runScript() {
+            if (!currentAdapter || !currentFilename) return;
+            term.write('\r\n>>> Run\r\n');
+            await currentAdapter.write('\x03'); // Stop current script
+            await delay(50);
+            // Paste mode
+            await currentAdapter.write('\x05');
+            const code = editor.getValue();
+            const chunk = 1024;
+            for (let i = 0; i < code.length; i += chunk) {
+                await currentAdapter.write(code.substring(i, i + chunk));
+            }
+            await currentAdapter.write('\x04');
+        }
+
+        async function stopCode() {
+            if (currentAdapter) {
+                await currentAdapter.write('\x03\x03');
+            }
+        }
+
+        // Init UI
+        function resetUI() {
+            const btn = document.getElementById('btnConnect');
+            btn.className = "bg-md-primary text-md-onPrimary text-xs font-bold px-4 py-1.5 rounded-full";
+            btn.innerText = "Connect";
+            document.getElementById('termStatusDot').className = "w-2 h-2 rounded-full bg-red-500";
+            closeFile();
+        }
+        function updateUIConnected() {
+            const btn = document.getElementById('btnConnect');
+            btn.className = "bg-md-danger text-white text-xs font-bold px-4 py-1.5 rounded-full";
+            btn.innerText = "Disconnect";
+            document.getElementById('termStatusDot').className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]";
+        }
+        function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+        
+        // Terminal input proxy
+        term.onData(d => { if (isConnected && currentAdapter) currentAdapter.write(d); });
+
+        // ================= ESP series firmware flasher helpers =================
+
+        // Open flasher window; if REPL connected, disconnect to free the port
+        async function openEspFlashModal() {
+            try {
+                if (isConnected && currentAdapter) {
+                    await currentAdapter.disconnect();
+                    isConnected = false;
+                    resetUI();
+                }
+            } catch (e) {
+                console.warn("Failed to disconnect existing serial port (can be ignored):", e);
+            }
+            toggleModal('espFlashModal', true);
+        }
+
+        // Apply manifest URL from input box to esp-web-install-button
+        function applyEspManifest() {
+            const manifestUrl = document.getElementById("espManifestInput").value.trim();
+            if (!manifestUrl) {
+                alert("Please enter manifest URL first");
+                return;
+            }
+            const btn = document.getElementById("espInstaller");
+            if (btn) {
+                btn.setAttribute("manifest", manifestUrl);
+                alert("Manifest URL applied:\n" + manifestUrl);
+            } else {
+                alert("ESP install button component not found");
+            }
+        }
+    </script>
+</body>
+</html>
