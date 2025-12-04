@@ -52,7 +52,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #444746; border-radius: 99px; }
         
-        /* Material-style helpers (only effective if Tailwind is built locally; with CDN they are decorative) */
         .btn-material { @apply flex items-center justify-center gap-2 px-4 py-2 rounded-full transition-all duration-200 font-medium select-none cursor-pointer active:scale-95; }
         .btn-icon { @apply p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer text-gray-400 hover:text-white; }
         .btn-filled { @apply bg-md-primary text-md-onPrimary hover:opacity-90 shadow-lg shadow-blue-900/20; }
@@ -62,23 +61,20 @@
         .file-item { @apply px-4 py-3 rounded-r-full mr-2 cursor-pointer flex items-center gap-3 text-sm text-gray-400 transition-colors border-l-4 border-transparent hover:bg-white/5; }
         .file-item.active { @apply bg-[#004a77] text-blue-200 border-md-primary; }
 
-        /* Modal animation */
         .modal-bg { @apply fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm opacity-0 transition-opacity duration-300; }
         .modal-bg.show { @apply opacity-100; }
         .modal-content { @apply bg-md-surface2 w-full max-w-2xl rounded-3xl p-6 shadow-2xl transform scale-95 transition-transform duration-300 border border-gray-700; }
         .modal-bg.show .modal-content { @apply scale-100; }
 
-        /* Sidebar animation */
         .sidebar-mobile { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .sidebar-hidden { transform: translateX(-100%); }
 
-        /* Floating modal positioning */
         .esp-flasher-modal {
             position: fixed;
-            top: 20px; /* Distance from top of the screen */
+            top: 20px;
             left: 50%;
-            transform: translateX(-50%); /* Center the modal horizontally */
-            z-index: 60; /* Make sure it's above the editor and terminal */
+            transform: translateX(-50%);
+            z-index: 60;
             width: 95%;
             max-width: 500px;
             background-color: #1a1c1e;
@@ -154,7 +150,6 @@
 
                 <div class="flex-1"></div>
 
-                <!-- Run/Save/Stop group -->
                 <div class="flex items-center gap-1 bg-md-surface2 rounded-full p-1 border border-gray-700">
                     <button id="btnRun"
                             class="btn-icon w-8 h-8 text-green-400 hover:bg-green-900/30 btn-disabled"
@@ -205,14 +200,17 @@
         </main>
     </div>
 
-    <!-- ESP series firmware flashing tool window (hidden by default) -->
+    <!-- ESP series firmware flashing tool window -->
     <div id="espFlashModal" class="esp-flasher-modal">
         <div class="modal-content max-w-xl">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h2 class="text-lg font-semibold text-md-primary">ESP Series Firmware Flasher</h2>
                     <p class="text-xs text-gray-500 mt-1">
-                        Flash MicroPython firmware to ESP8266 / ESP32 series boards directly from your browser.
+                        1) Open the <a href="https://micropython.org/download/" target="_blank" class="text-md-primary underline">MicroPython download page</a>,
+                        find the correct <code>.bin</code> firmware for your board and download it.<br>
+                        2) Select MCU below, then drag that <code>.bin</code> file into the area (or click to choose it).<br>
+                        3) Click <strong>Flash</strong> to burn the firmware.
                     </p>
                 </div>
                 <button class="btn-icon" onclick="toggleModal('espFlashModal', false)">
@@ -222,48 +220,60 @@
 
             <div class="space-y-4 text-sm">
                 <div class="bg-md-surface rounded-2xl px-3 py-2 border border-gray-700 text-[11px] text-gray-400 leading-relaxed">
-                    <p>Instructions:</p>
+                    <p>Notes:</p>
                     <ol class="list-decimal list-inside mt-1 space-y-1">
                         <li>Use Chrome / Edge and open this page via <code>https://</code> or <code>http://localhost</code>.</li>
-                        <li>If REPL is currently connected, please disconnect it first.</li>
-                        <li>Click the button below, select the ESP device serial port.</li>
-                        <li>Follow the prompts to select/confirm firmware and start flashing.</li>
+                        <li>If REPL is currently connected, it will be disconnected when opening this flasher.</li>
+                        <li>Select the MCU that matches your ESP board, then choose the firmware file from MicroPython website.</li>
                     </ol>
                 </div>
 
-                <div class="space-y-2">
-                    <label class="text-xs text-gray-400">Firmware manifest URL</label>
-                    <input
-                        id="espManifestInput"
-                        class="w-full bg-md-surface border border-gray-700 rounded-2xl px-3 py-2 text-xs focus:outline-none focus:border-md-primary"
-                        placeholder="e.g. https://your-domain.com/micropython/esp-manifest.json"
-                        value="https://your-domain.com/micropython/esp-manifest.json">
-                    <p class="text-[10px] text-gray-500">
-                        Tip: The manifest can define different firmware images for different chip types
-                        (ESP8266, ESP32, ESP32-S3, ESP32-C3, etc.). ESP Web Tools will auto-detect the chip
-                        and flash the correct firmware.
+                <!-- MCU selector -->
+                <div>
+                    <label class="text-xs text-gray-400">MCU</label>
+                    <select id="chipFamilySelect"
+                            class="mt-1 w-full bg-md-surface border border-gray-700 rounded-2xl px-3 py-2 text-xs focus:outline-none focus:border-md-primary">
+                        <option value="ESP32">ESP32 (classic)</option>
+                        <option value="ESP32-S3">ESP32-S3</option>
+                        <option value="ESP32-C3">ESP32-C3</option>
+                        <option value="ESP32-S2">ESP32-S2</option>
+                        <option value="ESP8266">ESP8266</option>
+                    </select>
+                    <p class="text-[10px] text-gray-500 mt-1">
+                        For most generic ESP32 boards, keep it as <strong>ESP32</strong>. For C3 / S3 / S2 / 8266, choose the corresponding option.
                     </p>
                 </div>
 
-                <div class="pt-2">
-                    <!-- ESP Web Tools install button; outer button keeps our visual style -->
-                    <esp-web-install-button id="espInstaller"
-                        manifest="https://your-domain.com/micropython/esp-manifest.json">
-                        <!-- Custom slot content -->
+                <!-- Drag & drop / file select area -->
+                <div>
+                    <label class="text-xs text-gray-400">Firmware file (.bin)</label>
+                    <div id="firmwareDropZone"
+                         class="mt-1 border-2 border-dashed border-gray-700 rounded-2xl px-4 py-6 text-center text-xs text-gray-400 cursor-pointer hover:border-md-primary hover:bg-md-surface transition-colors">
+                        <input id="firmwareFileInput" type="file" accept=".bin" class="hidden">
+                        <div class="flex flex-col items-center gap-2">
+                            <i class="fa-solid fa-file-arrow-up text-lg opacity-70"></i>
+                            <span>Drag &amp; drop firmware <code>.bin</code> file here,<br>or click to choose from disk</span>
+                            <span id="firmwareFileName" class="text-[10px] text-gray-500 mt-1">
+                                No file selected
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-1">
+                    <!-- ESP Web Tools install button; manifest will be set dynamically from local file -->
+                    <esp-web-install-button id="espInstaller">
                         <button class="btn-material btn-filled text-xs px-5 py-2">
                             <i class="fa-solid fa-bolt text-xs"></i>
-                            <span>Connect and Flash Firmware</span>
+                            <span>Flash</span>
                         </button>
                     </esp-web-install-button>
                     <p class="text-[10px] text-gray-500 mt-2">
-                        If you need to change the manifest URL, edit the field above and click "Apply manifest".
+                        Once a firmware file is selected, a temporary manifest is generated in memory and attached here.
+                        Then you can connect to the board and flash it directly.
                     </p>
+
                     <div class="mt-2 flex gap-2">
-                        <button class="btn-material btn-tonal text-[11px] px-3 py-1.5"
-                                onclick="applyEspManifest()">
-                            <i class="fa-solid fa-link text-[10px]"></i>
-                            <span>Apply manifest</span>
-                        </button>
                         <button class="btn-material btn-text text-[11px] px-3 py-1.5"
                                 onclick="window.open('https://esphome.github.io/esp-web-tools/', '_blank')">
                             <i class="fa-solid fa-circle-question text-[10px]"></i>
@@ -274,9 +284,8 @@
 
                 <div class="border-t border-gray-700 pt-3 mt-1">
                     <p class="text-[10px] text-gray-500">
-                        Suggestion: host your MicroPython firmware images (single .bin or merged image) on an HTTPS server,
-                        and create an <code>esp-manifest.json</code> following ESP Web Tools' format. Then you can flash
-                        all ESP series devices from this page with one click.
+                        The selected local firmware file is wrapped into a temporary manifest JSON and referenced
+                        via a <code>blob:</code> URL, so you don't need to host <code>esp-manifest.json</code> on a server.
                     </p>
                 </div>
             </div>
@@ -288,6 +297,7 @@
         let currentFilename = null;
         let isConnected = false;
         let currentAdapter = null;
+        let selectedFirmwareFile = null;
 
         // UI helpers
         function showLoading(show, txt) {
@@ -338,7 +348,7 @@
         term.open(document.getElementById('terminal-container'));
         new ResizeObserver(() => fitAddon.fit()).observe(document.getElementById('terminal-container'));
 
-        // ================= Serial Adapter (MicroPython over Web Serial) =================
+        // ================= Serial Adapter =================
         class SerialAdapter {
             constructor() {
                 this.port = null;
@@ -353,7 +363,7 @@
                 if (!navigator.serial) throw new Error("Current browser does not support Web Serial");
                 this.port = await navigator.serial.requestPort();
                 await this.port.open({ baudRate: 115200 });
-                await this.port.setSignals({ dataTerminalReady: false, requestToSend: false }); // avoid auto reset
+                await this.port.setSignals({ dataTerminalReady: false, requestToSend: false });
                 const enc = new TextEncoderStream();
                 const dec = new TextDecoderStream();
                 enc.readable.pipeTo(this.port.writable);
@@ -362,9 +372,7 @@
                 this.reader = dec.readable.getReader();
                 this.keepReading = true;
                 this.readLoop();
-                
-                // Initialize: interrupt and go to REPL
-                await this.write('\x03\x03'); // Ctrl-C twice
+                await this.write('\x03\x03');
                 await delay(100);
             }
             
@@ -396,8 +404,7 @@
                     await this.write('\x03\x01'); // Raw REPL
                     await delay(50);
                     this.internalBuffer = "";
-                    await this.write(code + '\x04'); // Execute
-                    // Wait for result terminator
+                    await this.write(code + '\x04');
                     for (let i = 0; i < 150; i++) {
                         if (this.internalBuffer.includes('\x04>')) break;
                         await delay(50);
@@ -461,7 +468,6 @@
             }
         }
 
-        // File operations
         async function refreshFileList() {
             if (!currentAdapter) return;
             showLoading(true, "Syncing files...");
@@ -476,7 +482,6 @@
                     div.onclick = () => openFile(f);
                     list.appendChild(div);
                 });
-            } catch (e) {
             } finally {
                 showLoading(false);
             }
@@ -544,13 +549,11 @@
             }
         }
 
-        // Run & stop
         async function runScript() {
             if (!currentAdapter || !currentFilename) return;
             term.write('\r\n>>> Run\r\n');
-            await currentAdapter.write('\x03'); // Stop current script
+            await currentAdapter.write('\x03');
             await delay(50);
-            // Paste mode
             await currentAdapter.write('\x05');
             const code = editor.getValue();
             const chunk = 1024;
@@ -566,7 +569,6 @@
             }
         }
 
-        // Init UI
         function resetUI() {
             const btn = document.getElementById('btnConnect');
             btn.className = "bg-md-primary text-md-onPrimary text-xs font-bold px-4 py-1.5 rounded-full";
@@ -582,12 +584,10 @@
         }
         function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
         
-        // Terminal input proxy
         term.onData(d => { if (isConnected && currentAdapter) currentAdapter.write(d); });
 
-        // ================= ESP series firmware flasher helpers =================
+        // ================= ESP flasher helpers =================
 
-        // Open flasher window; if REPL connected, disconnect to free the port
         async function openEspFlashModal() {
             try {
                 if (isConnected && currentAdapter) {
@@ -596,27 +596,98 @@
                     resetUI();
                 }
             } catch (e) {
-                console.warn("Failed to disconnect existing serial port (can be ignored):", e);
+                console.warn("Failed to disconnect existing serial port:", e);
             }
             toggleModal('espFlashModal', true);
         }
 
-        // Apply manifest URL from input box to esp-web-install-button
-        function applyEspManifest() {
-            const manifestUrl = document.getElementById("espManifestInput").value.trim();
-            if (!manifestUrl) {
-                alert("Please enter manifest URL first");
-                return;
-            }
-            const btn = document.getElementById("espInstaller");
-            if (btn) {
-                btn.setAttribute("manifest", manifestUrl);
-                alert("Manifest URL applied:\n" + manifestUrl);
-            } else {
-                alert("ESP install button component not found");
+        const dropZone = document.getElementById('firmwareDropZone');
+        const fileInput = document.getElementById('firmwareFileInput');
+        const fileNameLabel = document.getElementById('firmwareFileName');
+
+        if (dropZone && fileInput) {
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('border-md-primary', 'bg-md-surface');
+            });
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('border-md-primary', 'bg-md-surface');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('border-md-primary', 'bg-md-surface');
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    handleFirmwareFile(e.dataTransfer.files[0]);
+                    e.dataTransfer.clearData();
+                }
+            });
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                    handleFirmwareFile(e.target.files[0]);
+                }
+            });
+        }
+
+        function handleFirmwareFile(file) {
+            selectedFirmwareFile = file;
+            fileNameLabel.innerText = file.name + " (" + Math.round(file.size / 1024) + " KB)";
+            prepareManifestFromLocalFile(file);
+        }
+
+        function getOffsetsForChip(chip) {
+            // 经验规则：经典 ESP32 的 MicroPython 通常从 0x1000 开始，其它一体 bin 多从 0x0 开始
+            if (chip === "ESP32") return 0x1000;
+            return 0x0;
+        }
+
+        async function prepareManifestFromLocalFile(file) {
+            try {
+                showLoading(true, "Preparing firmware manifest...");
+                const chipSelect = document.getElementById("chipFamilySelect");
+                const chipFamily = chipSelect ? (chipSelect.value || "ESP32") : "ESP32";
+                const offset = getOffsetsForChip(chipFamily);
+
+                const firmwareUrl = URL.createObjectURL(file);
+
+                const manifestObj = {
+                    name: file.name || "Local firmware",
+                    version: "local",
+                    new_install_prompt_erase: true,
+                    builds: [
+                        {
+                            chipFamily: chipFamily,
+                            improv: false,
+                            parts: [
+                                {
+                                path: firmwareUrl,
+                                offset: offset
+                                }
+                            ]
+                        }
+                    ]
+                };
+
+                const blob = new Blob([JSON.stringify(manifestObj)], { type: "application/json" });
+                const manifestUrl = URL.createObjectURL(blob);
+
+                const btn = document.getElementById("espInstaller");
+                if (btn) {
+                    btn.setAttribute("manifest", manifestUrl);
+                } else {
+                    alert("ESP install button component not found.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Failed to prepare manifest from local file: " + (e.message || e));
+            } finally {
+                showLoading(false);
             }
         }
     </script>
 </body>
 </html>
-
