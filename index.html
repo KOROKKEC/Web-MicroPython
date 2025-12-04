@@ -312,107 +312,118 @@
         </div>
     </div>
 
-    <!-- Top bar -->
-    <header class="h-16 flex items-center justify-between px-4 bg-md-base shrink-0 z-20 border-b border-gray-800">
-        <div class="flex items-center gap-3">
-            <button class="md:hidden btn-icon" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
-            <div class="flex flex-col">
-                <h1 class="text-lg font-bold text-md-primary tracking-tight">
-                    Web MicroPython
-                </h1>
-            </div>
-        </div>
-
-        <div class="flex items-center bg-md-surface2 rounded-full p-1 border border-gray-700">
-            <button id="btnConnect"
-                    class="bg-md-primary text-md-onPrimary text-xs font-bold px-4 py-1.5 rounded-full hover:brightness-110 transition-all"
-                    onclick="toggleConnection()">Connect</button>
-        </div>
-    </header>
-
-    <!-- Main -->
-    <div class="flex-1 flex overflow-hidden relative">
-        <!-- Sidebar -->
-        <aside id="sidebar" class="absolute inset-y-0 left-0 w-64 bg-md-surface2 z-10 flex flex-col border-r border-gray-800 sidebar-mobile sidebar-hidden md:relative md:transform-none shadow-2xl md:shadow-none">
-            <div class="p-3 flex items-center justify-between border-b border-gray-800">
-                <span class="text-xs font-bold text-gray-500 uppercase pl-2">Explorer</span>
-                <div class="flex gap-1">
-                    <button id="btnExplorerRefresh" class="btn-icon w-7 h-7" onclick="refreshFileList()"><i class="fa-solid fa-rotate-right text-xs"></i></button>
-                    <button class="btn-icon w-7 h-7" onclick="createNewFile()"><i class="fa-solid fa-plus text-xs"></i></button>
-                    <button class="btn-icon w-7 h-7" onclick="deleteCurrentFile()"><i class="fa-solid fa-trash text-xs"></i></button>
-                </div>
-            </div>
-            <div id="fileList" class="flex-1 overflow-y-auto pb-4 pt-2">
-                <div class="flex flex-col items-center justify-center h-40 text-gray-600 gap-2 opacity-50">
-                    <i class="fa-regular fa-folder-open text-2xl"></i>
-                    <span class="text-xs">Please connect device</span>
-                </div>
-            </div>
-        </aside>
-        
-        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-0 hidden md:hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
-
-        <!-- Content -->
-        <main class="flex-1 flex flex-col bg-md-base min-w-0">
-            <!-- Toolbar -->
-            <div class="h-12 flex items-center px-2 gap-2 border-b border-gray-800 bg-md-base shrink-0 overflow-x-auto no-scrollbar">
-                <div id="fileTab" class="hidden px-4 py-1.5 bg-md-surface rounded-full text-sm text-md-primary font-medium flex items-center gap-2 border border-gray-700">
-                    <i id="fileTabIcon" class="fa-solid fa-file-code"></i>
-                    <span id="fileTabName">main.py</span>
-                    <button onclick="closeFile()" class="ml-2 hover:text-white text-gray-500"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-
-                <div class="flex-1"></div>
-
-                <div class="flex items-center gap-1 bg-md-surface2 rounded-full p-1 border border-gray-700">
-                    <button id="btnRun"
-                            class="btn-icon w-8 h-8 text-green-400 hover:bg-green-900/30 btn-disabled"
-                            onclick="runScript()" title="Run (F5)">
-                        <i class="fa-solid fa-play"></i>
-                    </button>
-                    <button id="btnSave"
-                            class="btn-icon w-8 h-8 text-blue-400 hover:bg-blue-900/30 btn-disabled"
-                            onclick="saveFile()" title="Save (Ctrl+S)">
-                        <i class="fa-solid fa-floppy-disk"></i>
-                    </button>
-                    <button id="btnStop"
-                            class="btn-icon w-8 h-8 text-red-400 hover:bg-red-900/30 btn-disabled"
-                            onclick="stopCode()" title="Stop">
-                        <i class="fa-solid fa-stop"></i>
-                    </button>
-                </div>
-
-                <!-- Toolbox button: yellow lightning, open ESP flashing window -->
-                <button class="btn-icon w-8 h-8 text-yellow-300 hover:bg-yellow-900/30 ml-1"
-                        onclick="openEspFlashModal()"
-                        title="ESP series firmware flasher">
-                    <i class="fa-solid fa-bolt"></i>
-                </button>
-            </div>
-
-            <div class="flex-1 flex flex-col lg:flex-row overflow-hidden p-2 gap-2">
-                <!-- Editor -->
-                <div class="flex-1 bg-md-surface rounded-3xl overflow-hidden shadow-lg border border-gray-800 relative flex flex-col">
-                    <div id="editor" class="flex-1"></div>
-                    <div id="editor-placeholder" class="absolute inset-0 flex items-center justify-center bg-md-surface z-10 text-gray-600 flex-col gap-3">
-                        <i class="fa-brands fa-python text-6xl opacity-20"></i>
-                    </div>
-                </div>
-
-                <!-- Terminal -->
-                <div class="h-1/3 lg:h-auto lg:w-[40%] bg-black rounded-3xl overflow-hidden border border-gray-800 p-1 shadow-lg flex flex-col">
-                    <div class="h-8 flex items-center justify-between px-4 bg-black border-b border-gray-900">
-                        <span class="text-[10px] font-bold text-gray-500 uppercase">Shell</span>
-                        <div class="flex gap-2 items-center">
-                            <span class="text-[10px] text-gray-600">Type below</span>
-                            <div class="w-2 h-2 rounded-full bg-red-500" id="termStatusDot"></div>
-                        </div>
-                    </div>
-                    <div id="terminal-container" class="flex-1 bg-black pl-1"></div>
-                </div>
-            </div>
-        </main>
+<!-- Top bar: 修改后的工具栏 -->
+<div class="h-16 flex items-center justify-between px-4 bg-md-base shrink-0 z-20 border-b border-gray-800">
+    <!-- 左侧显示 "Web MicroPython" -->
+    <div class="flex items-center gap-3">
+        <h1 class="text-lg font-bold text-md-primary tracking-tight">
+            Web MicroPython
+        </h1>
     </div>
+
+    <!-- 右侧显示按钮 -->
+    <div class="flex items-center gap-1">
+        <!-- Connect 按钮 -->
+        <button id="btnConnect"
+                class="bg-md-primary text-md-onPrimary text-xs font-bold px-4 py-1.5 rounded-full hover:brightness-110 transition-all"
+                onclick="toggleConnection()">Connect</button>
+        
+        <!-- Flash 工具按钮 -->
+        <button class="btn-icon w-8 h-8 text-yellow-300 hover:bg-yellow-900/30"
+                onclick="openEspFlashModal()" title="ESP series firmware flasher">
+            <i class="fa-solid fa-bolt"></i>
+        </button>
+
+        <!-- 运行按钮 -->
+        <button id="btnRun" class="btn-icon w-8 h-8 text-green-400 hover:bg-green-900/30 btn-disabled"
+                onclick="runScript()" title="Run (F5)">
+            <i class="fa-solid fa-play"></i>
+        </button>
+
+        <!-- 保存按钮 -->
+        <button id="btnSave" class="btn-icon w-8 h-8 text-blue-400 hover:bg-blue-900/30 btn-disabled"
+                onclick="saveFile()" title="Save (Ctrl+S)">
+            <i class="fa-solid fa-floppy-disk"></i>
+        </button>
+
+        <!-- 下载按钮 -->
+        <button id="btnDownload" class="btn-icon w-8 h-8 text-blue-400 hover:bg-blue-900/30"
+                onclick="downloadCurrentFile()" title="Download file">
+            <i class="fa-solid fa-download"></i>
+        </button>
+
+        <!-- 停止按钮 -->
+        <button id="btnStop" class="btn-icon w-8 h-8 text-red-400 hover:bg-red-900/30 btn-disabled"
+                onclick="stopCode()" title="Stop">
+            <i class="fa-solid fa-stop"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Main content: 编辑器和终端 -->
+<div class="flex-1 flex overflow-hidden relative">
+    <!-- Sidebar: Explorer Section -->
+    <aside id="sidebar" class="absolute inset-y-0 left-0 w-64 bg-md-surface2 z-10 flex flex-col border-r border-gray-800 sidebar-mobile sidebar-hidden md:relative md:transform-none shadow-2xl md:shadow-none">
+        <div class="p-3 flex items-center justify-between border-b border-gray-800">
+            <span class="text-xs font-bold text-gray-500 uppercase pl-2">Explorer</span>
+            <div class="flex gap-1">
+                <!-- 刷新按钮 -->
+                <button id="btnExplorerRefresh" class="btn-icon w-7 h-7" onclick="refreshFileList()"><i class="fa-solid fa-rotate-right text-xs"></i></button>
+                
+                <!-- 新建文件按钮 -->
+                <button class="btn-icon w-7 h-7" onclick="createNewFile()"><i class="fa-solid fa-plus text-xs"></i></button>
+                
+                <!-- 删除文件按钮 -->
+                <button class="btn-icon w-7 h-7" onclick="deleteCurrentFile()"><i class="fa-solid fa-trash text-xs"></i></button>
+                
+                <!-- 上传按钮 -->
+                <button id="btnUpload" class="btn-icon w-7 h-7" onclick="triggerUploadFile()">
+                    <i class="fa-solid fa-upload text-xs"></i>
+                </button>
+
+                <!-- PYPI 按钮 -->
+                <a href="https://pypi.org/" target="_blank">
+                    <button class="btn-icon w-7 h-7">
+                        <i class="fa-brands fa-python text-xs"></i>
+                    </button>
+                </a>
+            </div>
+        </div>
+        <div id="fileList" class="flex-1 overflow-y-auto pb-4 pt-2">
+            <div class="flex flex-col items-center justify-center h-40 text-gray-600 gap-2 opacity-50">
+                <i class="fa-regular fa-folder-open text-2xl"></i>
+                <span class="text-xs">Please connect device</span>
+            </div>
+        </div>
+    </aside>
+    
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-0 hidden md:hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
+
+    <!-- Content -->
+    <main class="flex-1 flex flex-col bg-md-base min-w-0">
+        <div class="flex-1 flex flex-col lg:flex-row overflow-hidden p-2 gap-2">
+            <!-- 编辑器 -->
+            <div class="flex-1 bg-md-surface rounded-2xl overflow-hidden shadow-lg border border-gray-800 relative flex flex-col">
+                <div id="editor" class="flex-1"></div>
+                <div id="editor-placeholder" class="absolute inset-0 flex items-center justify-center bg-md-surface z-10 text-gray-600 flex-col gap-3">
+                    <i class="fa-brands fa-python text-6xl opacity-20"></i>
+                </div>
+            </div>
+
+            <!-- 终端 -->
+            <div class="h-1/3 lg:h-auto lg:w-[40%] bg-black rounded-2xl overflow-hidden border border-gray-800 p-1 shadow-lg flex flex-col">
+                <div class="h-8 flex items-center justify-between px-4 bg-black border-b border-gray-900">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase">Shell</span>
+                    <div class="flex gap-2 items-center">
+                        <span class="text-[10px] text-gray-600">Type below</span>
+                        <div class="w-2 h-2 rounded-full bg-red-500" id="termStatusDot"></div>
+                    </div>
+                </div>
+                <div id="terminal-container" class="flex-1 bg-black pl-1"></div>
+            </div>
+        </div>
+    </main>
+</div>
 
     <!-- ESP series firmware flashing tool window -->
     <div id="espFlashModal" class="esp-flasher-modal">
@@ -694,6 +705,40 @@
             } finally {
                 showLoading(false);
             }
+        }
+
+        function triggerUploadFile() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.py';  // 只允许选择 Python 文件
+            fileInput.onchange = (event) => handleFileUpload(event);
+            fileInput.click();
+        }
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                console.log("正在上传文件:", file.name);
+                if (currentAdapter) {
+                    const fileContent = await file.text();
+                    await currentAdapter.saveFile(file.name, fileContent);
+                }
+            }
+        }
+
+        function downloadCurrentFile() {
+            if (!currentFilename || !currentAdapter) return;
+    
+            const fileContent = editor.getValue();
+            const blob = new Blob([fileContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+    
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         async function openFile(fn) {
