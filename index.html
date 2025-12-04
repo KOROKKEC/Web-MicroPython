@@ -87,13 +87,222 @@
             display: block;
         }
 
-        /* 可选：让 esp-web-tools 内部按钮也更圆一点（不会影响你自定义的 Flash 按钮） */
+        /* Optional: make esp-web-tools internal buttons rounder (does not affect your custom Flash button) */
         esp-web-install-button {
             --esp-tools-button-border-radius: 9999px;
         }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden relative selection:bg-md-primary selection:text-md-onPrimary">
+
+    <!-- First-time welcome overlay -->
+    <div id="welcomeModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-md-surface2 w-full max-w-4xl mx-3 rounded-3xl border border-gray-800 shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <div class="inline-flex items-center gap-2 rounded-full bg-md-surface px-3 py-1 border border-gray-700 text-[11px] text-gray-400 mb-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+                        <span>First-time guide</span>
+                    </div>
+                    <h2 class="text-xl font-semibold text-white">
+                        Welcome to <span class="text-md-primary">Web MicroPython</span>
+                    </h2>
+                    <p class="text-[12px] text-gray-400 mt-1 max-w-xl">
+                        This IDE lets you connect to a MicroPython board, browse files, edit code, run scripts,
+                        and flash ESP firmware – all directly inside your browser.
+                    </p>
+                </div>
+                <button class="btn-icon" type="button" data-welcome-close>
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="mt-4 grid md:grid-cols-2 gap-4">
+                <div class="space-y-3 text-[12px] text-gray-200">
+                    <div class="flex items-start gap-2">
+                        <div class="mt-0.5 w-7 h-7 rounded-2xl bg-md-surface flex items-center justify-center border border-gray-700 text-md-secondary">
+                            <i class="fa-solid fa-usb text-[11px]"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Connect via Web Serial</div>
+                            <p class="text-[12px] text-gray-400 mt-0.5">
+                                Use Chrome or Edge, and open this IDE over <code>https://</code> or <code>http://localhost</code>
+                                to allow access to the serial port.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-2">
+                        <div class="mt-0.5 w-7 h-7 rounded-2xl bg-md-surface flex items-center justify-center border border-gray-700 text-md-primary">
+                            <i class="fa-solid fa-file-code text-[11px]"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Edit and run MicroPython code</div>
+                            <p class="text-[12px] text-gray-400 mt-0.5">
+                                Use the Explorer to open files from the board, edit them in the central editor,
+                                save changes back, and run scripts while watching output in the Shell.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-2">
+                        <div class="mt-0.5 w-7 h-7 rounded-2xl bg-md-surface flex items-center justify-center border border-gray-700 text-amber-300">
+                            <i class="fa-solid fa-bolt text-[11px]"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Flash ESP firmware</div>
+                            <p class="text-[12px] text-gray-400 mt-0.5">
+                                Click the yellow lightning icon in the toolbar to open the Flash toolbox and
+                                burn MicroPython firmware to ESP32 / ESP8266 series boards.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3 text-[12px] text-gray-200">
+                    <div class="rounded-3xl bg-md-surface border border-gray-700 p-3">
+                        <div class="text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-md-primary text-[10px]"></i>
+                            Quick checklist
+                        </div>
+                        <ul class="space-y-1 text-[12px] text-gray-400">
+                            <li>• Chrome or Edge with Web Serial support.</li>
+                            <li>• Access over <code>https://</code> or <code>http://localhost</code>.</li>
+                            <li>• A supported MCU board (ESP32 / ESP8266 series, etc.) and USB cable.</li>
+                            <li>• MicroPython firmware installed, or ready to be flashed.</li>
+                        </ul>
+                    </div>
+
+                    <div class="rounded-3xl bg-md-surface border border-gray-700 p-3">
+                        <div class="text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-md-success text-[10px]"></i>
+                            Privacy note
+                        </div>
+                        <p class="text-[12px] text-gray-400">
+                            All communication happens locally between your browser and the board.
+                            The IDE does not upload your code or firmware to any server.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-2">
+                <button id="welcomeGuideBtn"
+                        type="button"
+                        data-welcome-guide
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold bg-md-primary text-md-onPrimary hover:brightness-110 shadow-md shadow-blue-900/30 transition">
+                    <i class="fa-solid fa-book-open text-[11px]"></i>
+                    <span>Open getting started guide</span>
+                </button>
+                <button type="button"
+                        data-welcome-close
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold bg-md-surface border border-gray-700 text-gray-200 hover:bg-md-surface2 transition">
+                    <i class="fa-solid fa-xmark text-[11px]"></i>
+                    <span>Close for now</span>
+                </button>
+                <button type="button"
+                        data-welcome-never
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold bg-transparent border border-gray-700 text-gray-400 hover:text-gray-200 hover:bg-white/5 transition">
+                    <i class="fa-regular fa-circle-check text-[11px]"></i>
+                    <span>Do not show again</span>
+                </button>
+            </div>
+
+            <!-- Hidden getting-started guide, toggled by button -->
+            <div id="welcomeGuide" class="mt-5 rounded-3xl bg-md-surface border border-gray-700 p-4 hidden">
+                <h3 class="text-sm font-semibold text-white flex items-center gap-2 mb-2">
+                    <span class="w-7 h-7 rounded-2xl bg-md-surface2 flex items-center justify-center text-md-primary">
+                        <i class="fa-solid fa-person-running text-[11px]"></i>
+                    </span>
+                    Getting started
+                </h3>
+                <ol class="space-y-3 text-[12px] text-gray-200">
+                    <li class="flex gap-3">
+                        <div class="flex-shrink-0 w-6 h-6 rounded-full bg-md-primary/15 text-md-primary flex items-center justify-center text-[11px] font-bold">
+                            1
+                        </div>
+                        <div>
+                            <div class="font-semibold">Connect your device</div>
+                            <p class="text-[12px] text-gray-400 mt-1">
+                                In the top bar, click <strong>“Connect”</strong>. Choose the serial port that belongs
+                                to your MCU and grant browser permission. When connected, the Shell status dot turns green.
+                            </p>
+                        </div>
+                    </li>
+
+                    <li class="flex gap-3">
+                        <div class="flex-shrink-0 w-6 h-6 rounded-full bg-md-primary/15 text-md-primary flex items-center justify-center text-[11px] font-bold">
+                            2
+                        </div>
+                        <div>
+                            <div class="font-semibold">List and open files</div>
+                            <p class="text-[12px] text-gray-400 mt-1">
+                                In the Explorer panel on the left:
+                            </p>
+                            <ul class="mt-1 space-y-1 text-[12px] text-gray-400">
+                                <li>• Click the refresh icon to list files on the board.</li>
+                                <li>• Click a filename (for example <code>main.py</code>) to open it in the editor.</li>
+                                <li>• Use the plus icon to create a new file, and the trash icon to delete the current file.</li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="flex gap-3">
+                        <div class="flex-shrink-0 w-6 h-6 rounded-full bg-md-primary/15 text-md-primary flex items-center justify-center text-[11px] font-bold">
+                            3
+                        </div>
+                        <div>
+                            <div class="font-semibold">Edit, save, and run</div>
+                            <p class="text-[12px] text-gray-400 mt-1">
+                                Edit MicroPython code in the central editor.
+                            </p>
+                            <ul class="mt-1 space-y-1 text-[12px] text-gray-400">
+                                <li>• Click the save icon (or press <code>Ctrl+S</code>) to write the file back to the board.</li>
+                                <li>• Click the run icon to send the current file to the board and execute it.</li>
+                                <li>• Click stop to send <code>Ctrl+C</code> and interrupt the running program.</li>
+                            </ul>
+                            <p class="text-[11px] text-gray-500 mt-1">
+                                The Shell on the right shows REPL output and lets you type interactive commands.
+                            </p>
+                        </div>
+                    </li>
+
+                    <li class="flex gap-3">
+                        <div class="flex-shrink-0 w-6 h-6 rounded-full bg-md-primary/15 text-md-primary flex items-center justify-center text-[11px] font-bold">
+                            4
+                        </div>
+                        <div>
+                            <div class="font-semibold">Flash MicroPython firmware (optional)</div>
+                            <p class="text-[12px] text-gray-400 mt-1">
+                                If your board does not yet have MicroPython installed:
+                            </p>
+                            <ul class="mt-1 space-y-1 text-[12px] text-gray-400">
+                                <li>• Click the yellow lightning icon in the toolbar to open the ESP firmware flasher.</li>
+                                <li>• Choose the correct MCU type (ESP32 / ESP32-S3 / ESP32-C3 / ESP32-S2 / ESP8266).</li>
+                                <li>• Download the right <code>.bin</code> from the official MicroPython download page.</li>
+                                <li>• Drag and drop the file into the flasher area, then click <strong>Flash</strong>.</li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="flex gap-3">
+                        <div class="flex-shrink-0 w-6 h-6 rounded-full bg-md-primary/15 text-md-primary flex items-center justify-center text-[11px] font-bold">
+                            5
+                        </div>
+                        <div>
+                            <div class="font-semibold">Troubleshooting tips</div>
+                            <ul class="mt-1 space-y-1 text-[12px] text-gray-400">
+                                <li>• If you see no output, make sure the board is not in bootloader mode.</li>
+                                <li>• Try disconnecting, resetting the board, and connecting again.</li>
+                                <li>• Ensure you selected the correct serial port in the browser dialog.</li>
+                                <li>• Always save files before resetting or disconnecting the board.</li>
+                            </ul>
+                        </div>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
 
     <!-- Global loading overlay (hidden by default) -->
     <div id="loading-overlay" class="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center backdrop-blur-sm hidden">
@@ -268,14 +477,14 @@
                 <div class="pt-1">
                     <!-- ESP Web Tools install button; manifest will be set dynamically from local file -->
                     <esp-web-install-button id="espInstaller">
-    <button
-        slot="activate"
-        class="bg-md-primary text-md-onPrimary text-xs font-bold px-4 py-1.5 rounded-full hover:brightness-110 transition-all flex items-center gap-2"
-    >
-        <i class="fa-solid fa-bolt text-xs"></i>
-        <span>Flash</span>
-    </button>
-</esp-web-install-button>
+                        <button
+                            slot="activate"
+                            class="bg-md-primary text-md-onPrimary text-xs font-bold px-4 py-1.5 rounded-full hover:brightness-110 transition-all flex items-center gap-2"
+                        >
+                            <i class="fa-solid fa-bolt text-xs"></i>
+                            <span>Flash</span>
+                        </button>
+                    </esp-web-install-button>
                     <p class="text-[10px] text-gray-500 mt-2">
                         Once a firmware file is selected, a temporary manifest is generated in memory and attached here.
                         Then you can connect to the board and flash it directly.
@@ -285,7 +494,7 @@
                 <div class="border-t border-gray-700 pt-3 mt-1">
                     <p class="text-[10px] text-gray-500">
                         The selected local firmware file is wrapped into a temporary manifest JSON and referenced
-                        via a <code>blob:</code> URL, so you don't need to host <code>esp-manifest.json</code> on a server.
+                        via a <code>blob:</code> URL, so you do not need to host <code>esp-manifest.json</code> on a server.
                     </p>
                 </div>
             </div>
@@ -457,7 +666,7 @@
                     await currentAdapter.connect();
                     isConnected = true;
                     updateUIConnected();
-                    // 不做任何自动刷新，Explorer 完全由用户手动点刷新
+                    // No automatic file syncing; Explorer refresh is fully controlled by the user
                 } catch (e) {
                     alert(e.message || e);
                     isConnected = false;
@@ -495,7 +704,7 @@
             editor.setReadOnly(false);
             document.getElementById('editor-placeholder').classList.add('hidden');
             updateTab();
-            // 这里的 refreshFileList 是配合高亮当前文件，属于用户点击行为触发，不是自动刷新整体列表
+            // Calling refreshFileList here is only for highlighting the active file (user-triggered, not automatic syncing)
             refreshFileList();
             showLoading(false);
         }
@@ -641,7 +850,7 @@
         }
 
         function getOffsetsForChip(chip) {
-            // 经验规则：经典 ESP32 的 MicroPython 通常从 0x1000 开始，其它一体 bin 多从 0x0 开始
+            // Rule of thumb: classic ESP32 MicroPython images commonly start at 0x1000; many single .bin images for other chips start at 0x0
             if (chip === "ESP32") return 0x1000;
             return 0x0;
         }
@@ -665,8 +874,8 @@
                             improv: false,
                             parts: [
                                 {
-                                path: firmwareUrl,
-                                offset: offset
+                                    path: firmwareUrl,
+                                    offset: offset
                                 }
                             ]
                         }
@@ -689,6 +898,62 @@
                 showLoading(false);
             }
         }
+
+        // ================= Welcome overlay init =================
+        function initWelcomeOverlay() {
+            const modal = document.getElementById('welcomeModal');
+            if (!modal) return;
+
+            const STORAGE_KEY = 'web-micropython-hide-welcome';
+            let hideForever = false;
+
+            try {
+                hideForever = localStorage.getItem(STORAGE_KEY) === '1';
+            } catch (e) {
+                console.warn('Unable to read localStorage for welcome modal:', e);
+            }
+
+            if (!hideForever) {
+                toggleModal('welcomeModal', true);
+            }
+
+            const closeButtons = modal.querySelectorAll('[data-welcome-close]');
+            closeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    toggleModal('welcomeModal', false);
+                });
+            });
+
+            const neverButtons = modal.querySelectorAll('[data-welcome-never]');
+            neverButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    try {
+                        localStorage.setItem(STORAGE_KEY, '1');
+                    } catch (e) {
+                        console.warn('Unable to write localStorage for welcome modal:', e);
+                    }
+                    toggleModal('welcomeModal', false);
+                });
+            });
+
+            const guideBtn = modal.querySelector('[data-welcome-guide]');
+            const guide = document.getElementById('welcomeGuide');
+            if (guideBtn && guide) {
+                guideBtn.addEventListener('click', () => {
+                    const isHidden = guide.classList.contains('hidden');
+                    if (isHidden) {
+                        guide.classList.remove('hidden');
+                        guideBtn.innerHTML = '<i class="fa-solid fa-book-open text-[11px]"></i><span>Hide getting started guide</span>';
+                    } else {
+                        guide.classList.add('hidden');
+                        guideBtn.innerHTML = '<i class="fa-solid fa-book-open text-[11px]"></i><span>Open getting started guide</span>';
+                    }
+                });
+            }
+        }
+
+        // Initialize welcome overlay once everything is defined
+        initWelcomeOverlay();
     </script>
 </body>
 </html>
