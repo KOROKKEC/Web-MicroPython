@@ -8,7 +8,7 @@
     <!-- icon -->
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-
+    <!-- PWA manifest -->
     <link rel="manifest" href="manifest.json">
     
     <!-- Core libraries -->
@@ -94,7 +94,7 @@
             --esp-tools-button-border-radius: 9999px;
         }
 
-        /* 新增：禁用按钮的通用样式 */
+        /* Disabled button style */
         .btn-disabled {
             opacity: 0.4;
             pointer-events: none;
@@ -202,6 +202,15 @@
                     <i class="fa-solid fa-book-open text-[11px]"></i>
                     <span>Open getting started guide</span>
                 </button>
+
+                <!-- New: Install as app button -->
+                <button id="installAppBtn"
+                        type="button"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold bg-md-surface border border-md-primary text-md-primary hover:bg-md-surface2 transition hidden">
+                    <i class="fa-solid fa-download text-[11px]"></i>
+                    <span>Install as app</span>
+                </button>
+
                 <button type="button"
                         data-welcome-close
                         class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold bg-md-surface border border-gray-700 text-gray-200 hover:bg-md-surface2 transition">
@@ -320,49 +329,48 @@
         </div>
     </div>
 
-<!-- Top bar: 修改后的工具栏 -->
+<!-- Top bar -->
 <div class="h-16 flex items-center justify-between px-4 bg-md-base shrink-0 z-20 border-b border-gray-800">
-    <!-- 左侧显示 "Web MicroPython" -->
+    <!-- Left: title -->
     <div class="flex items-center gap-3">
         <h1 class="text-lg font-bold text-md-primary tracking-tight">
             Web MicroPython
         </h1>
     </div>
 
-    <!-- 右侧显示按钮 -->
+    <!-- Right: toolbar buttons -->
     <div class="flex items-center gap-1">
-        <!-- Connect 按钮 -->
+        <!-- Connect -->
         <button id="btnConnect"
                 class="bg-md-primary text-md-onPrimary text-xs font-bold px-4 py-1.5 rounded-full hover:brightness-110 transition-all"
                 onclick="toggleConnection()">Connect</button>
         
-        <!-- Flash 工具按钮 -->
+        <!-- Flash tool -->
         <button class="btn-icon w-8 h-8 text-yellow-300 hover:bg-yellow-900/30"
                 onclick="openEspFlashModal()" title="ESP series firmware flasher">
             <i class="fa-solid fa-bolt"></i>
         </button>
 
-        <!-- 运行按钮 -->
+        <!-- Run -->
         <button id="btnRun" class="btn-icon w-8 h-8 text-green-400 hover:bg-green-900/30 btn-disabled"
                 onclick="runScript()" title="Run (F5)">
             <i class="fa-solid fa-play"></i>
         </button>
 
-        <!-- 保存按钮 -->
+        <!-- Save -->
         <button id="btnSave" class="btn-icon w-8 h-8 text-blue-400 hover:bg-blue-900/30 btn-disabled"
                 onclick="saveFile()" title="Save (Ctrl+S)">
             <i class="fa-solid fa-floppy-disk"></i>
         </button>
 
-        <!-- 下载按钮 -->
+        <!-- Download -->
         <button id="btnDownload"
                 class="btn-icon w-8 h-8 text-blue-400 hover:bg-blue-900/30 btn-disabled"
                 onclick="downloadCurrentFile()" title="Download file">
             <i class="fa-solid fa-download"></i>
         </button>
 
-
-        <!-- 停止按钮 -->
+        <!-- Stop -->
         <button id="btnStop" class="btn-icon w-8 h-8 text-red-400 hover:bg-red-900/30 btn-disabled"
                 onclick="stopCode()" title="Stop">
             <i class="fa-solid fa-stop"></i>
@@ -370,34 +378,34 @@
     </div>
 </div>
 
-<!-- Main content: 编辑器和终端 -->
+<!-- Main content -->
 <div class="flex-1 flex overflow-hidden relative">
     <!-- Sidebar: Explorer Section -->
     <aside id="sidebar"
         class="absolute inset-y-0 left-0 w-64 bg-transparent z-10 sidebar-mobile sidebar-hidden
                 md:relative md:transform-none md:bg-transparent">
         <div class="p-2 h-full">
-            <!-- 整个 Explorer 卡片（Material You 风格） -->
+            <!-- Explorer card -->
             <div class="flex flex-col h-full rounded-3xl bg-md-surface2 border border-gray-800
                         shadow-lg overflow-hidden">
-                <!-- 顶部：Explorer 标题 + 按钮，全在同一个色块里 -->
+                <!-- Explorer header -->
                 <div class="px-3 py-2 flex items-center justify-between border-b border-gray-800">
                     <span class="text-xs font-bold text-gray-500 uppercase">Explorer</span>
                     <div class="flex gap-1">
-                        <!-- 刷新 -->
+                        <!-- Refresh -->
                         <button id="btnExplorerRefresh" class="btn-icon w-7 h-7"
                                 onclick="refreshFileList()">
                             <i class="fa-solid fa-rotate-right text-xs"></i>
                         </button>
-                        <!-- 新建 -->
+                        <!-- New file -->
                         <button class="btn-icon w-7 h-7" onclick="createNewFile()">
                             <i class="fa-solid fa-plus text-xs"></i>
                         </button>
-                        <!-- 删除 -->
+                        <!-- Delete -->
                         <button class="btn-icon w-7 h-7" onclick="deleteCurrentFile()">
                             <i class="fa-solid fa-trash text-xs"></i>
                         </button>
-                        <!-- 上传 -->
+                        <!-- Upload -->
                         <button id="btnUpload" class="btn-icon w-7 h-7"
                                 onclick="triggerUploadFile()">
                             <i class="fa-solid fa-upload text-xs"></i>
@@ -411,7 +419,7 @@
                     </div>
                 </div>
 
-                <!-- 当前文件信息：和 explorer 在同一个色块里，不再用顶部小标签 -->
+                <!-- Current file info -->
                 <div class="px-3 py-2 border-b border-gray-800 bg-md-surface flex items-center justify-between">
                     <div class="flex items-center gap-2 min-w-0 text-xs text-gray-300">
                         <i class="fa-regular fa-file-lines text-md-primary text-[11px]"></i>
@@ -427,7 +435,7 @@
                     </button>
                 </div>
 
-                <!-- 文件列表，同样在这张卡片内部 -->
+                <!-- File list -->
                 <div id="fileList" class="flex-1 overflow-y-auto pb-4 pt-2">
                     <div class="flex flex-col items-center justify-center h-40 text-gray-600 gap-2 opacity-50">
                         <i class="fa-regular fa-folder-open text-2xl"></i>
@@ -444,7 +452,7 @@
     <!-- Content -->
     <main class="flex-1 flex flex-col bg-md-base min-w-0">
         <div class="flex-1 flex flex-col lg:flex-row overflow-hidden p-2 gap-2">
-            <!-- 编辑器 -->
+            <!-- Editor -->
             <div class="flex-1 bg-md-surface rounded-2xl overflow-hidden shadow-lg border border-gray-800 relative flex flex-col">
                 <div id="editor" class="flex-1"></div>
                 <div id="editor-placeholder" class="absolute inset-0 flex items-center justify-center bg-md-surface z-10 text-gray-600 flex-col gap-3">
@@ -452,7 +460,7 @@
                 </div>
             </div>
 
-            <!-- 终端 -->
+            <!-- Terminal -->
             <div class="h-1/3 lg:h-auto lg:w-[40%] bg-black rounded-2xl overflow-hidden border border-gray-800 p-1 shadow-lg flex flex-col">
                 <div class="h-8 flex items-center justify-between px-4 bg-black border-b border-gray-900">
                     <span class="text-[10px] font-bold text-gray-500 uppercase">Shell</span>
@@ -539,8 +547,8 @@
                         </button>
                     </esp-web-install-button>
                     <p class="text-[10px] text-gray-500 mt-2">
-                        Once a firmware file is selected, a temporary manifest is generated in memory and attached here.
-                        Then you can connect to the board and flash it directly.
+                        Once a firmware file is selected, a temporary manifest is generated in memory and attached
+                        here. Then you can connect to the board and flash it directly.
                     </p>
                 </div>
 
@@ -560,6 +568,30 @@
         let isConnected = false;
         let currentAdapter = null;
         let selectedFirmwareFile = null;
+
+        // PWA install prompt cache
+        let deferredInstallPrompt = null;
+
+        // Handle beforeinstallprompt: browser detected that app can be installed
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent automatic mini-infobar
+            e.preventDefault();
+            deferredInstallPrompt = e;
+
+            const installBtn = document.getElementById('installAppBtn');
+            if (installBtn) {
+                installBtn.classList.remove('hidden');
+            }
+        });
+
+        // When app installed, hide the install button
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            const installBtn = document.getElementById('installAppBtn');
+            if (installBtn) {
+                installBtn.classList.add('hidden');
+            }
+        });
 
         // UI helpers
         function showLoading(show, txt) {
@@ -599,7 +631,7 @@
         editor.setFontSize(14);
         editor.setReadOnly(true);
 
-        // 终端初始化
+        // Terminal init
         const termContainer = document.getElementById('terminal-container');
         const term = new Terminal({
             cursorBlink: true,
@@ -611,26 +643,26 @@
         term.loadAddon(fitAddon);
         term.open(termContainer);
 
-        // 封装一个自适应函数：行数减 1，避免最后一行被裁掉
+        // Resize helper: reduce one row to avoid content being cut off
         function fitTerminal() {
             const dims = fitAddon.proposeDimensions();
             if (dims) {
                 const cols = dims.cols;
-                const rows = Math.max(1, dims.rows - 1);  // 关键：少一行
+                const rows = Math.max(1, dims.rows - 1);
                 term.resize(cols, rows);
                 term.scrollToBottom();
             }
         }
 
-        // 初次布局适配一次
+        // Initial fit
         fitTerminal();
 
-        // 监听容器尺寸变化
+        // Observe container resizes
         new ResizeObserver(() => {
             fitTerminal();
         }).observe(termContainer);
 
-        // 如果你愿意，也可以监听窗口尺寸（包含浏览器缩放）
+        // Window resize
         window.addEventListener('resize', fitTerminal);
 
         // ================= Serial Adapter =================
@@ -725,7 +757,7 @@ except:
                 if (!b64) return "";
                 try {
                     const decoded = window.atob(b64.trim());
-                    // 按 UTF-8 解码
+                    // UTF-8 decode
                     return decodeURIComponent(escape(decoded));
                 } catch (e) {
                     console.error("Decode error:", e);
@@ -758,7 +790,7 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
                     await currentAdapter.connect();
                     isConnected = true;
                     updateUIConnected();
-                    // 不再自动同步文件
+                    // No auto sync files
                 } catch (e) {
                     alert(e.message || e);
                     isConnected = false;
@@ -791,7 +823,7 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
         function triggerUploadFile() {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
-            fileInput.accept = '.py';  // 只允许选择 Python 文件
+            fileInput.accept = '.py';  // only Python
             fileInput.onchange = (event) => handleFileUpload(event);
             fileInput.click();
         }
@@ -799,11 +831,11 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
         async function handleFileUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                console.log("正在上传文件:", file.name);
+                console.log("Uploading file:", file.name);
                 if (currentAdapter) {
                     const fileContent = await file.text();
                     await currentAdapter.saveFile(file.name, fileContent);
-                    // 上传后刷新列表
+                    // Refresh list after upload
                     refreshFileList();
                 }
             }
@@ -824,7 +856,7 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
             document.body.removeChild(a);
         }
 
-        // 新的：更新 Explorer 中的当前文件 “书签” 标签
+        // Update Explorer current file display
         function updateCurrentFileDisplay() {
             const label = document.getElementById('currentFileNameLabel');
             const closeBtn = document.getElementById('btnCloseFileTag');
@@ -837,7 +869,7 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
                 label.classList.remove('text-gray-500');
                 closeBtn.classList.remove('hidden');
 
-                // 允许运行 / 保存 / 停止 / 下载
+                // enable actions
                 btns.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.remove('btn-disabled');
@@ -846,14 +878,14 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
                 label.textContent = 'No file opened';
                 closeBtn.classList.add('hidden');
 
-                // 没有打开文件时禁用按钮
+                // disable actions
                 btns.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.add('btn-disabled');
                 });
             }
 
-            // 同时高亮左侧列表中的当前文件
+            // highlight current file in list
             const fileList = document.getElementById('fileList');
             if (fileList) {
                 [...fileList.querySelectorAll('.file-item')].forEach(div => {
@@ -1118,11 +1150,38 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
                     }
                 });
             }
+
+            // Install as app button logic
+            const installBtn = document.getElementById('installAppBtn');
+            if (installBtn) {
+                installBtn.addEventListener('click', async () => {
+                    if (!deferredInstallPrompt) {
+                        // Some environments may not fire beforeinstallprompt (already installed / not eligible)
+                        alert('Install prompt is not available. You can also use the browser menu to install this app.');
+                        return;
+                    }
+
+                    // Show browser install dialog
+                    deferredInstallPrompt.prompt();
+                    const choice = await deferredInstallPrompt.userChoice;
+
+                    if (choice.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+
+                    // Can only be used once
+                    deferredInstallPrompt = null;
+                    installBtn.classList.add('hidden');
+                });
+            }
         }
 
         // Initialize welcome overlay once everything is defined
         initWelcomeOverlay();
-        // ================= PWA Service Worker 注册 =================
+
+        // ================= PWA Service Worker registration =================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -1137,5 +1196,3 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
     </script>
 </body>
 </html>
-
-
