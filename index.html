@@ -597,6 +597,8 @@
         editor.setFontSize(14);
         editor.setReadOnly(true);
 
+        // 终端初始化
+        const termContainer = document.getElementById('terminal-container');
         const term = new Terminal({
             cursorBlink: true,
             theme: { background: '#000000', foreground: '#d4d4d4' },
@@ -605,8 +607,29 @@
         });
         const fitAddon = new FitAddon.FitAddon();
         term.loadAddon(fitAddon);
-        term.open(document.getElementById('terminal-container'));
-        new ResizeObserver(() => fitAddon.fit()).observe(document.getElementById('terminal-container'));
+        term.open(termContainer);
+
+        // 封装一个自适应函数：行数减 1，避免最后一行被裁掉
+        function fitTerminal() {
+            const dims = fitAddon.proposeDimensions();
+            if (dims) {
+                const cols = dims.cols;
+                const rows = Math.max(1, dims.rows - 1);  // 关键：少一行
+                term.resize(cols, rows);
+                term.scrollToBottom();
+            }
+        }
+
+        // 初次布局适配一次
+        fitTerminal();
+
+        // 监听容器尺寸变化
+        new ResizeObserver(() => {
+            fitTerminal();
+        }).observe(termContainer);
+
+        // 如果你愿意，也可以监听窗口尺寸（包含浏览器缩放）
+        window.addEventListener('resize', fitTerminal);
 
         // ================= Serial Adapter =================
         class SerialAdapter {
