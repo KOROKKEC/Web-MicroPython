@@ -8,6 +8,8 @@
     <!-- icon -->
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+
+    <link rel="manifest" href="manifest.json">
     
     <!-- Core libraries -->
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.js"></script>
@@ -1120,7 +1122,20 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
 
         // Initialize welcome overlay once everything is defined
         initWelcomeOverlay();
+        // ================= PWA Service Worker 注册 =================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => {
+                        console.log('Service Worker registered:', reg.scope);
+                    })
+                    .catch(err => {
+                        console.error('Service Worker registration failed:', err);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
+
 
