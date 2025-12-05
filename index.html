@@ -371,62 +371,71 @@
 <!-- Main content: 编辑器和终端 -->
 <div class="flex-1 flex overflow-hidden relative">
     <!-- Sidebar: Explorer Section -->
-    <aside id="sidebar" class="absolute inset-y-0 left-0 w-64 bg-md-surface2 z-10 flex flex-col border-r border-gray-800 sidebar-mobile sidebar-hidden md:relative md:transform-none shadow-2xl md:shadow-none">
-        <div class="p-3 flex items-center justify-between border-b border-gray-800">
-            <span class="text-xs font-bold text-gray-500 uppercase pl-2">Explorer</span>
-            <div class="flex gap-1">
-                <!-- 刷新按钮 -->
-                <button id="btnExplorerRefresh" class="btn-icon w-7 h-7" onclick="refreshFileList()"><i class="fa-solid fa-rotate-right text-xs"></i></button>
-                
-                <!-- 新建文件按钮 -->
-                <button class="btn-icon w-7 h-7" onclick="createNewFile()"><i class="fa-solid fa-plus text-xs"></i></button>
-                
-                <!-- 删除文件按钮 -->
-                <button class="btn-icon w-7 h-7" onclick="deleteCurrentFile()"><i class="fa-solid fa-trash text-xs"></i></button>
-                
-                <!-- 上传按钮 -->
-                <button id="btnUpload" class="btn-icon w-7 h-7" onclick="triggerUploadFile()">
-                    <i class="fa-solid fa-upload text-xs"></i>
-                </button>
-
-                <!-- PYPI 按钮 -->
-                <a href="https://pypi.org/" target="_blank">
-                    <button class="btn-icon w-7 h-7">
-                        <i class="fa-brands fa-python text-xs"></i>
-                    </button>
-                </a>
-            </div>
-        </div>
-
-        <!-- 当前文件标签：类似你截图里的效果 -->
-        <div id="currentFileTag" class="px-3 pt-2 pb-1 hidden">
-            <div
-                class="w-full flex items-center justify-between gap-2 px-3 py-1.5
-                    rounded-full bg-md-surface text-[12px] text-gray-200
-                    border border-gray-700 shadow-sm"
-            >
-                <div class="flex items-center gap-2 min-w-0">
-                    <i class="fa-solid fa-bookmark text-[11px] text-md-primary"></i>
-                    <!-- 文件名：超长时自动省略 -->
-                    <span id="currentFileTagName" class="truncate">
-                        main.py
-                    </span>
+    <aside id="sidebar"
+        class="absolute inset-y-0 left-0 w-64 bg-transparent z-10 sidebar-mobile sidebar-hidden
+                md:relative md:transform-none md:bg-transparent">
+        <div class="p-2 h-full">
+            <!-- 整个 Explorer 卡片（Material You 风格） -->
+            <div class="flex flex-col h-full rounded-3xl bg-md-surface2 border border-gray-800
+                        shadow-lg overflow-hidden">
+                <!-- 顶部：Explorer 标题 + 按钮，全在同一个色块里 -->
+                <div class="px-3 py-2 flex items-center justify-between border-b border-gray-800">
+                    <span class="text-xs font-bold text-gray-500 uppercase">Explorer</span>
+                    <div class="flex gap-1">
+                        <!-- 刷新 -->
+                        <button id="btnExplorerRefresh" class="btn-icon w-7 h-7"
+                                onclick="refreshFileList()">
+                            <i class="fa-solid fa-rotate-right text-xs"></i>
+                        </button>
+                        <!-- 新建 -->
+                        <button class="btn-icon w-7 h-7" onclick="createNewFile()">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                        <!-- 删除 -->
+                        <button class="btn-icon w-7 h-7" onclick="deleteCurrentFile()">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                        <!-- 上传 -->
+                        <button id="btnUpload" class="btn-icon w-7 h-7"
+                                onclick="triggerUploadFile()">
+                            <i class="fa-solid fa-upload text-xs"></i>
+                        </button>
+                        <!-- PYPI -->
+                        <a href="https://pypi.org/" target="_blank">
+                            <button class="btn-icon w-7 h-7">
+                                <i class="fa-brands fa-python text-xs"></i>
+                            </button>
+                        </a>
+                    </div>
                 </div>
-                <button type="button"
-                        class="text-gray-500 hover:text-gray-200"
-                        onclick="closeFile()">
-                    <i class="fa-solid fa-xmark text-[10px]"></i>
-                </button>
-            </div>
-        </div>
 
-        <div id="fileList" class="flex-1 overflow-y-auto pb-4 pt-2">
-            <div class="flex flex-col items-center justify-center h-40 text-gray-600 gap-2 opacity-50">
-                <i class="fa-regular fa-folder-open text-2xl"></i>
-                <span class="text-xs">Please connect device</span>
+                <!-- 当前文件信息：和 explorer 在同一个色块里，不再用顶部小标签 -->
+                <div class="px-3 py-2 border-b border-gray-800 bg-md-surface flex items-center justify-between">
+                    <div class="flex items-center gap-2 min-w-0 text-xs text-gray-300">
+                        <i class="fa-regular fa-file-lines text-md-primary text-[11px]"></i>
+                        <span id="currentFileNameLabel" class="truncate">
+                            No file opened
+                        </span>
+                    </div>
+                    <button id="btnCloseFileTag"
+                            type="button"
+                            class="text-gray-500 hover:text-gray-200 text-[10px] hidden"
+                            onclick="closeFile()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- 文件列表，同样在这张卡片内部 -->
+                <div id="fileList" class="flex-1 overflow-y-auto pb-4 pt-2">
+                    <div class="flex flex-col items-center justify-center h-40 text-gray-600 gap-2 opacity-50">
+                        <i class="fa-regular fa-folder-open text-2xl"></i>
+                        <span class="text-xs">Please connect device</span>
+                    </div>
+                </div>
             </div>
         </div>
     </aside>
+
     
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-0 hidden md:hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
 
@@ -791,36 +800,44 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
         }
 
         // 新的：更新 Explorer 中的当前文件 “书签” 标签
-        function updateCurrentFileTag() {
-            const tagWrap = document.getElementById('currentFileTag');
-            const tagName = document.getElementById('currentFileTagName');
-            const btns = ['btnRun','btnSave','btnStop','btnDownload'];
+        function updateCurrentFileDisplay() {
+            const label = document.getElementById('currentFileNameLabel');
+            const closeBtn = document.getElementById('btnCloseFileTag');
+            const btns = ['btnRun', 'btnSave', 'btnStop', 'btnDownload'];
 
-            if (!tagWrap || !tagName) return;
+            if (!label || !closeBtn) return;
 
             if (currentFilename) {
-                tagWrap.classList.remove('hidden');
-                tagName.innerText = currentFilename;
+                label.textContent = currentFilename;
+                label.classList.remove('text-gray-500');
+                closeBtn.classList.remove('hidden');
+
+                // 允许运行 / 保存 / 停止 / 下载
                 btns.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.remove('btn-disabled');
                 });
             } else {
-                tagWrap.classList.add('hidden');
-                tagName.innerText = '';
+                label.textContent = 'No file opened';
+                closeBtn.classList.add('hidden');
+
+                // 没有打开文件时禁用按钮
                 btns.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.add('btn-disabled');
                 });
             }
 
-            // 同时高亮当前文件
+            // 同时高亮左侧列表中的当前文件
             const fileList = document.getElementById('fileList');
             if (fileList) {
                 [...fileList.querySelectorAll('.file-item')].forEach(div => {
                     const name = div.textContent.trim();
-                    if (name === currentFilename) div.classList.add('active');
-                    else div.classList.remove('active');
+                    if (name === currentFilename) {
+                        div.classList.add('active');
+                    } else {
+                        div.classList.remove('active');
+                    }
                 });
             }
         }
@@ -834,7 +851,7 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
                 editor.setValue(txt, -1);
                 editor.setReadOnly(false);
                 document.getElementById('editor-placeholder').classList.add('hidden');
-                updateCurrentFileTag();
+                updateCurrentFileDisplay();
             } catch (e) {
                 console.error(e);
                 alert("Failed to read file: " + (e.message || e));
@@ -882,7 +899,7 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
             editor.setReadOnly(true);
             const ph = document.getElementById('editor-placeholder');
             if (ph) ph.classList.remove('hidden');
-            updateCurrentFileTag();
+            updateCurrentFileDisplay();
         }
 
         async function runScript() {
