@@ -353,10 +353,12 @@
         </button>
 
         <!-- 下载按钮 -->
-        <button id="btnDownload" class="btn-icon w-8 h-8 text-blue-400 hover:bg-blue-900/30"
+        <button id="btnDownload"
+                class="btn-icon w-8 h-8 text-blue-400 hover:bg-blue-900/30 btn-disabled"
                 onclick="downloadCurrentFile()" title="Download file">
             <i class="fa-solid fa-download"></i>
         </button>
+
 
         <!-- 停止按钮 -->
         <button id="btnStop" class="btn-icon w-8 h-8 text-red-400 hover:bg-red-900/30 btn-disabled"
@@ -792,7 +794,7 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
         function updateCurrentFileTag() {
             const tagWrap = document.getElementById('currentFileTag');
             const tagName = document.getElementById('currentFileTagName');
-            const btns = ['btnRun','btnSave','btnStop'];
+            const btns = ['btnRun','btnSave','btnStop','btnDownload'];
 
             if (!tagWrap || !tagName) return;
 
