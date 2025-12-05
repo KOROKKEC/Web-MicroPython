@@ -91,6 +91,12 @@
         esp-web-install-button {
             --esp-tools-button-border-radius: 9999px;
         }
+
+        /* 新增：禁用按钮的通用样式 */
+        .btn-disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden relative selection:bg-md-primary selection:text-md-onPrimary">
@@ -389,6 +395,29 @@
                 </a>
             </div>
         </div>
+
+        <!-- 当前文件标签：类似你截图里的效果 -->
+        <div id="currentFileTag" class="px-3 pt-2 pb-1 hidden">
+            <div
+                class="w-full flex items-center justify-between gap-2 px-3 py-1.5
+                    rounded-full bg-md-surface text-[12px] text-gray-200
+                    border border-gray-700 shadow-sm"
+            >
+                <div class="flex items-center gap-2 min-w-0">
+                    <i class="fa-solid fa-bookmark text-[11px] text-md-primary"></i>
+                    <!-- 文件名：超长时自动省略 -->
+                    <span id="currentFileTagName" class="truncate">
+                        main.py
+                    </span>
+                </div>
+                <button type="button"
+                        class="text-gray-500 hover:text-gray-200"
+                        onclick="closeFile()">
+                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+
         <div id="fileList" class="flex-1 overflow-y-auto pb-4 pt-2">
             <div class="flex flex-col items-center justify-center h-40 text-gray-600 gap-2 opacity-50">
                 <i class="fa-regular fa-folder-open text-2xl"></i>
@@ -650,13 +679,29 @@
                 return res ? JSON.parse(res.trim().replace(/'/g, '\"')) : [];
             }
             async readFile(fn) {
-                const code = `import ubinascii\ntry:\n with open('${fn}','rb') as f: print(ubinascii.b2a_base64(f.read()).decode('utf-8'),end='')\nexcept: print('')`;
+                const code =
+`import ubinascii
+try:
+ with open('${fn}','rb') as f: print(ubinascii.b2a_base64(f.read()).decode('utf-8'),end='')
+except:
+ print('')`;
                 const b64 = await this.execInternal(code);
-                return b64 ? decodeURIComponent(escape(window.atob(b64.trim()))) : "";
+                if (!b64) return "";
+                try {
+                    const decoded = window.atob(b64.trim());
+                    // 按 UTF-8 解码
+                    return decodeURIComponent(escape(decoded));
+                } catch (e) {
+                    console.error("Decode error:", e);
+                    return "";
+                }
             }
             async saveFile(fn, txt) {
                 const b64 = btoa(unescape(encodeURIComponent(txt)));
-                await this.execInternal(`import ubinascii\nwith open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`);
+                await this.execInternal(
+`import ubinascii
+with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
+                );
             }
             async deleteFile(fn) {
                 await this.execInternal(`import os; os.remove('${fn}')`);
@@ -677,7 +722,7 @@
                     await currentAdapter.connect();
                     isConnected = true;
                     updateUIConnected();
-                    // No automatic file syncing; Explorer refresh is fully controlled by the user
+                    // 不再自动同步文件
                 } catch (e) {
                     alert(e.message || e);
                     isConnected = false;
@@ -722,6 +767,8 @@
                 if (currentAdapter) {
                     const fileContent = await file.text();
                     await currentAdapter.saveFile(file.name, fileContent);
+                    // 上传后刷新列表
+                    refreshFileList();
                 }
             }
         }
@@ -741,24 +788,67 @@
             document.body.removeChild(a);
         }
 
+        // 新的：更新 Explorer 中的当前文件 “书签” 标签
+        function updateCurrentFileTag() {
+            const tagWrap = document.getElementById('currentFileTag');
+            const tagName = document.getElementById('currentFileTagName');
+            const btns = ['btnRun','btnSave','btnStop'];
+
+            if (!tagWrap || !tagName) return;
+
+            if (currentFilename) {
+                tagWrap.classList.remove('hidden');
+                tagName.innerText = currentFilename;
+                btns.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.remove('btn-disabled');
+                });
+            } else {
+                tagWrap.classList.add('hidden');
+                tagName.innerText = '';
+                btns.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('btn-disabled');
+                });
+            }
+
+            // 同时高亮当前文件
+            const fileList = document.getElementById('fileList');
+            if (fileList) {
+                [...fileList.querySelectorAll('.file-item')].forEach(div => {
+                    const name = div.textContent.trim();
+                    if (name === currentFilename) div.classList.add('active');
+                    else div.classList.remove('active');
+                });
+            }
+        }
+
         async function openFile(fn) {
+            if (!currentAdapter) return;
             currentFilename = fn;
             showLoading(true, "Reading file...");
-            const txt = await currentAdapter.readFile(fn);
-            editor.setValue(txt, -1);
-            editor.setReadOnly(false);
-            document.getElementById('editor-placeholder').classList.add('hidden');
-            updateTab();
-            // Calling refreshFileList here is only for highlighting the active file (user-triggered, not automatic syncing)
-            refreshFileList();
-            showLoading(false);
+            try {
+                const txt = await currentAdapter.readFile(fn);
+                editor.setValue(txt, -1);
+                editor.setReadOnly(false);
+                document.getElementById('editor-placeholder').classList.add('hidden');
+                updateCurrentFileTag();
+            } catch (e) {
+                console.error(e);
+                alert("Failed to read file: " + (e.message || e));
+            } finally {
+                showLoading(false);
+            }
         }
 
         async function saveFile() {
             if (!currentFilename || !currentAdapter) return;
             showLoading(true, "Saving file...");
-            await currentAdapter.saveFile(currentFilename, editor.getValue());
-            showLoading(false);
+            try {
+                await currentAdapter.saveFile(currentFilename, editor.getValue());
+            } finally {
+                showLoading(false);
+            }
         }
 
         async function createNewFile() {
@@ -771,7 +861,8 @@
                 currentFilename = n;
                 editor.setValue("", -1);
                 await saveFile();
-                openFile(n);
+                await openFile(n);
+                await refreshFileList();
             }
         }
         
@@ -787,21 +878,9 @@
             currentFilename = null;
             editor.setValue("", -1);
             editor.setReadOnly(true);
-            document.getElementById('editor-placeholder').classList.remove('hidden');
-            updateTab();
-        }
-
-        function updateTab() {
-            const tab = document.getElementById('fileTab');
-            const btns = ['btnRun','btnSave','btnStop'];
-            if (currentFilename) {
-                tab.classList.remove('hidden');
-                document.getElementById('fileTabName').innerText = currentFilename;
-                btns.forEach(id => document.getElementById(id).classList.remove('btn-disabled'));
-            } else {
-                tab.classList.add('hidden');
-                btns.forEach(id => document.getElementById(id).classList.add('btn-disabled'));
-            }
+            const ph = document.getElementById('editor-placeholder');
+            if (ph) ph.classList.remove('hidden');
+            updateCurrentFileTag();
         }
 
         async function runScript() {
