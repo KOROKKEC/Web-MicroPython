@@ -508,16 +508,6 @@
                 </button>
             </div>
 
-            <div class="space-y-4 text-sm">
-                <div class="bg-md-surface rounded-2xl px-3 py-2 border border-gray-700 text-[11px] text-gray-400 leading-relaxed">
-                    <p>Notes:</p>
-                    <ol class="list-decimal list-inside mt-1 space-y-1">
-                        <li>Use Chrome / Edge and open this page via <code>https://</code> or <code>http://localhost</code>.</li>
-                        <li>If REPL is currently connected, it will be disconnected when opening this flasher.</li>
-                        <li>Select the MCU that matches your ESP board, then choose the firmware file from MicroPython website.</li>
-                    </ol>
-                </div>
-
                 <!-- MCU selector -->
                 <div>
                     <label class="text-xs text-gray-400">MCU</label>
@@ -530,7 +520,7 @@
                         <option value="ESP8266">ESP8266</option>
                     </select>
                     <p class="text-[10px] text-gray-500 mt-1">
-                        For most generic ESP32 boards, keep it as <strong>ESP32</strong>. For C3 / S3 / S2 / 8266, choose the corresponding option.
+                        For most generic ESP32 boards, keep it as <strong>ESP32-WROOM</strong>. For C3 / S3 / S2 / 8266, choose the corresponding option.
                     </p>
                 </div>
 
@@ -1174,4 +1164,5 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
     </script>
 </body>
 </html>
+
 
