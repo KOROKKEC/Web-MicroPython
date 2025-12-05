@@ -1,0 +1,27 @@
+{
+  "name": "Web MicroPython",
+  "short_name": "Web MicroPy",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#101418",
+  "theme_color": "#101418",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+    /* 如果你有更大图标，可以再加：
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+    */
+  ]
+}
