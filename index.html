@@ -89,16 +89,17 @@
             display: block;
         }
 
-        /* Optional: make esp-web-tools internal buttons rounder (does not affect your custom Flash button) */
         esp-web-install-button {
             --esp-tools-button-border-radius: 9999px;
         }
 
-        /* Disabled button style */
         .btn-disabled {
             opacity: 0.4;
             pointer-events: none;
         }
+
+        /* marker for Google Translate */
+        .notranslate { }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden relative selection:bg-md-primary selection:text-md-onPrimary">
@@ -118,6 +119,10 @@
                     <p class="text-[12px] text-gray-400 mt-1 max-w-xl">
                         This IDE lets you connect to a MicroPython board, browse files, edit code, run scripts,
                         and flash ESP firmware – all directly inside your browser.
+                    </p>
+                    <p class="text-[12px] text-gray-400 mt-1 max-w-xl">
+                        You can also install this site as an application and launch it offline from your desktop or start menu
+                        after the first successful load.
                     </p>
                 </div>
                 <button class="btn-icon" type="button" data-welcome-close>
@@ -178,6 +183,7 @@
                             <li>• Access over <code>https://</code> or <code>http://localhost</code>.</li>
                             <li>• A supported MCU board (ESP32 / ESP8266 series, etc.) and USB cable.</li>
                             <li>• MicroPython firmware installed, or ready to be flashed.</li>
+                            <li>• You can install this page as an app and use it offline after it has been opened once.</li>
                         </ul>
                     </div>
 
@@ -203,10 +209,10 @@
                     <span>Open getting started guide</span>
                 </button>
 
-                <!-- New: Install as app button -->
+                <!-- Install as app button (always visible) -->
                 <button id="installAppBtn"
                         type="button"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold bg-md-surface border border-md-primary text-md-primary hover:bg-md-surface2 transition hidden">
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold bg-md-surface border border-md-primary text-md-primary hover:bg-md-surface2 transition">
                     <i class="fa-solid fa-download text-[11px]"></i>
                     <span>Install as app</span>
                 </button>
@@ -340,6 +346,13 @@
 
     <!-- Right: toolbar buttons -->
     <div class="flex items-center gap-1">
+        <!-- Guide button: reopen welcome modal -->
+        <button id="btnShowWelcome"
+                class="btn-icon w-8 h-8 text-md-primary hover:bg-white/10"
+                onclick="openWelcomeModal()" title="Show welcome guide">
+            <i class="fa-regular fa-circle-question"></i>
+        </button>
+
         <!-- Connect -->
         <button id="btnConnect"
                 class="bg-md-primary text-md-onPrimary text-xs font-bold px-4 py-1.5 rounded-full hover:brightness-110 transition-all"
@@ -383,7 +396,8 @@
     <!-- Sidebar: Explorer Section -->
     <aside id="sidebar"
         class="absolute inset-y-0 left-0 w-64 bg-transparent z-10 sidebar-mobile sidebar-hidden
-                md:relative md:transform-none md:bg-transparent">
+                md:relative md:transform-none md:bg-transparent notranslate"
+        translate="no">
         <div class="p-2 h-full">
             <!-- Explorer card -->
             <div class="flex flex-col h-full rounded-3xl bg-md-surface2 border border-gray-800
@@ -423,7 +437,7 @@
                 <div class="px-3 py-2 border-b border-gray-800 bg-md-surface flex items-center justify-between">
                     <div class="flex items-center gap-2 min-w-0 text-xs text-gray-300">
                         <i class="fa-regular fa-file-lines text-md-primary text-[11px]"></i>
-                        <span id="currentFileNameLabel" class="truncate">
+                        <span id="currentFileNameLabel" class="truncate notranslate" translate="no">
                             No file opened
                         </span>
                     </div>
@@ -436,7 +450,7 @@
                 </div>
 
                 <!-- File list -->
-                <div id="fileList" class="flex-1 overflow-y-auto pb-4 pt-2">
+                <div id="fileList" class="flex-1 overflow-y-auto pb-4 pt-2 notranslate" translate="no">
                     <div class="flex flex-col items-center justify-center h-40 text-gray-600 gap-2 opacity-50">
                         <i class="fa-regular fa-folder-open text-2xl"></i>
                         <span class="text-xs">Please connect device</span>
@@ -454,7 +468,9 @@
         <div class="flex-1 flex flex-col lg:flex-row overflow-hidden p-2 gap-2">
             <!-- Editor -->
             <div class="flex-1 bg-md-surface rounded-2xl overflow-hidden shadow-lg border border-gray-800 relative flex flex-col">
-                <div id="editor" class="flex-1"></div>
+                <div id="editor"
+                     class="flex-1 notranslate"
+                     translate="no"></div>
                 <div id="editor-placeholder" class="absolute inset-0 flex items-center justify-center bg-md-surface z-10 text-gray-600 flex-col gap-3">
                     <i class="fa-brands fa-python text-6xl opacity-20"></i>
                 </div>
@@ -463,13 +479,15 @@
             <!-- Terminal -->
             <div class="h-1/3 lg:h-auto lg:w-[40%] bg-black rounded-2xl overflow-hidden border border-gray-800 p-1 shadow-lg flex flex-col">
                 <div class="h-8 flex items-center justify-between px-4 bg-black border-b border-gray-900">
-                    <span class="text-[10px] font-bold text-gray-500 uppercase">Shell</span>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase notranslate" translate="no">Shell</span>
                     <div class="flex gap-2 items-center">
                         <span class="text-[10px] text-gray-600">Type below</span>
                         <div class="w-2 h-2 rounded-full bg-red-500" id="termStatusDot"></div>
                     </div>
                 </div>
-                <div id="terminal-container" class="flex-1 bg-black pl-1"></div>
+                <div id="terminal-container"
+                     class="flex-1 bg-black pl-1 notranslate"
+                     translate="no"></div>
             </div>
         </div>
     </main>
@@ -574,22 +592,16 @@
 
         // Handle beforeinstallprompt: browser detected that app can be installed
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent automatic mini-infobar
             e.preventDefault();
             deferredInstallPrompt = e;
-
-            const installBtn = document.getElementById('installAppBtn');
-            if (installBtn) {
-                installBtn.classList.remove('hidden');
-            }
         });
 
-        // When app installed, hide the install button
+        // When app installed, hide the install button (optional)
         window.addEventListener('appinstalled', () => {
             deferredInstallPrompt = null;
             const installBtn = document.getElementById('installAppBtn');
             if (installBtn) {
-                installBtn.classList.add('hidden');
+                installBtn.classList.add('btn-disabled');
             }
         });
 
@@ -624,6 +636,10 @@
             else ov.classList.remove('hidden');
         }
 
+        function openWelcomeModal() {
+            toggleModal('welcomeModal', true);
+        }
+
         // ================= Editor & Terminal =================
         const editor = ace.edit("editor");
         editor.setTheme("ace/theme/tomorrow_night_eighties");
@@ -631,7 +647,6 @@
         editor.setFontSize(14);
         editor.setReadOnly(true);
 
-        // Terminal init
         const termContainer = document.getElementById('terminal-container');
         const term = new Terminal({
             cursorBlink: true,
@@ -643,7 +658,6 @@
         term.loadAddon(fitAddon);
         term.open(termContainer);
 
-        // Resize helper: reduce one row to avoid content being cut off
         function fitTerminal() {
             const dims = fitAddon.proposeDimensions();
             if (dims) {
@@ -654,15 +668,8 @@
             }
         }
 
-        // Initial fit
         fitTerminal();
-
-        // Observe container resizes
-        new ResizeObserver(() => {
-            fitTerminal();
-        }).observe(termContainer);
-
-        // Window resize
+        new ResizeObserver(() => { fitTerminal(); }).observe(termContainer);
         window.addEventListener('resize', fitTerminal);
 
         // ================= Serial Adapter =================
@@ -757,7 +764,6 @@ except:
                 if (!b64) return "";
                 try {
                     const decoded = window.atob(b64.trim());
-                    // UTF-8 decode
                     return decodeURIComponent(escape(decoded));
                 } catch (e) {
                     console.error("Decode error:", e);
@@ -790,7 +796,6 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
                     await currentAdapter.connect();
                     isConnected = true;
                     updateUIConnected();
-                    // No auto sync files
                 } catch (e) {
                     alert(e.message || e);
                     isConnected = false;
@@ -823,7 +828,7 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
         function triggerUploadFile() {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
-            fileInput.accept = '.py';  // only Python
+            fileInput.accept = '.py';
             fileInput.onchange = (event) => handleFileUpload(event);
             fileInput.click();
         }
@@ -831,11 +836,9 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
         async function handleFileUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                console.log("Uploading file:", file.name);
                 if (currentAdapter) {
                     const fileContent = await file.text();
                     await currentAdapter.saveFile(file.name, fileContent);
-                    // Refresh list after upload
                     refreshFileList();
                 }
             }
@@ -843,11 +846,9 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
 
         function downloadCurrentFile() {
             if (!currentFilename || !currentAdapter) return;
-    
             const fileContent = editor.getValue();
             const blob = new Blob([fileContent], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
-    
             const a = document.createElement('a');
             a.href = url;
             a.download = currentFilename;
@@ -856,7 +857,6 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
             document.body.removeChild(a);
         }
 
-        // Update Explorer current file display
         function updateCurrentFileDisplay() {
             const label = document.getElementById('currentFileNameLabel');
             const closeBtn = document.getElementById('btnCloseFileTag');
@@ -866,10 +866,7 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
 
             if (currentFilename) {
                 label.textContent = currentFilename;
-                label.classList.remove('text-gray-500');
                 closeBtn.classList.remove('hidden');
-
-                // enable actions
                 btns.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.remove('btn-disabled');
@@ -877,15 +874,12 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
             } else {
                 label.textContent = 'No file opened';
                 closeBtn.classList.add('hidden');
-
-                // disable actions
                 btns.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.classList.add('btn-disabled');
                 });
             }
 
-            // highlight current file in list
             const fileList = document.getElementById('fileList');
             if (fileList) {
                 [...fileList.querySelectorAll('.file-item')].forEach(div => {
@@ -1050,7 +1044,6 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
         }
 
         function getOffsetsForChip(chip) {
-            // Rule of thumb: classic ESP32 MicroPython images commonly start at 0x1000; many single .bin images for other chips start at 0x0
             if (chip === "ESP32") return 0x1000;
             return 0x0;
         }
@@ -1151,48 +1144,36 @@ with open('${fn}','wb') as f: f.write(ubinascii.a2b_base64('${b64}'))`
                 });
             }
 
-            // Install as app button logic
             const installBtn = document.getElementById('installAppBtn');
             if (installBtn) {
                 installBtn.addEventListener('click', async () => {
-                    if (!deferredInstallPrompt) {
-                        // Some environments may not fire beforeinstallprompt (already installed / not eligible)
-                        alert('Install prompt is not available. You can also use the browser menu to install this app.');
-                        return;
-                    }
-
-                    // Show browser install dialog
-                    deferredInstallPrompt.prompt();
-                    const choice = await deferredInstallPrompt.userChoice;
-
-                    if (choice.outcome === 'accepted') {
-                        console.log('User accepted the install prompt');
+                    if (deferredInstallPrompt) {
+                        deferredInstallPrompt.prompt();
+                        const choice = await deferredInstallPrompt.userChoice;
+                        if (choice.outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                        } else {
+                            console.log('User dismissed the install prompt');
+                        }
+                        deferredInstallPrompt = null;
                     } else {
-                        console.log('User dismissed the install prompt');
+                        alert('Install prompt is not available.\nYou can also use your browser menu to install this app (e.g. "Install app" or "Add to home screen").');
                     }
-
-                    // Can only be used once
-                    deferredInstallPrompt = null;
-                    installBtn.classList.add('hidden');
                 });
             }
         }
 
-        // Initialize welcome overlay once everything is defined
-        initWelcomeOverlay();
-
-        // ================= PWA Service Worker registration =================
+        // Register service worker (for offline support)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => {
-                        console.log('Service Worker registered:', reg.scope);
-                    })
-                    .catch(err => {
-                        console.error('Service Worker registration failed:', err);
-                    });
+                navigator.serviceWorker.register('sw.js').catch(err => {
+                    console.log('Service worker registration failed:', err);
+                });
             });
         }
+
+        // Initialize welcome overlay after everything is defined
+        initWelcomeOverlay();
     </script>
 </body>
 </html>
